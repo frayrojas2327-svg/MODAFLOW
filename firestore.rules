@@ -1,0 +1,122 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Fields: uid, email, displayName, companyName, role
+    //
+    // Collection: products
+    // Fields: id, name, category, design, price, cost, variants, createdAt, ownerUid
+    //
+    // Collection: sales
+    // Fields: id, productId, productName, variantId, size, color, quantity, price, discount, total, paymentMethod, date, ownerUid
+    //
+    // Collection: expenses
+    // Fields: id, description, category, amount, date, ownerUid
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.ownerUid;
+    }
+
+    function isNewDocOwner() {
+      return isAuthenticated() && request.auth.uid == request.resource.data.ownerUid;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "milnerdelacruz03@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // Domain Validators
+    function isValidUser(data) {
+      return (!('uid' in data) || data.uid is string) && 
+             (!('email' in data) || (data.email is string && isValidEmail(data.email))) &&
+             (!('companyName' in data) || (data.companyName is string && data.companyName.size() < 200));
+    }
+
+    function isValidProduct(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.price is number && data.price >= 0 &&
+             data.cost is number && data.cost >= 0 &&
+             (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.size() < 1000)) &&
+             data.ownerUid == request.auth.uid;
+    }
+
+    function isValidSale(data) {
+      return data.total is number && data.total >= 0 &&
+             data.ownerUid == request.auth.uid;
+    }
+
+    function isValidExpense(data) {
+      return data.amount is number && data.amount >= 0 &&
+             data.ownerUid == request.auth.uid;
+    }
+
+    function isValidIncome(data) {
+      return data.amount is number && data.amount >= 0 &&
+             data.ownerUid == request.auth.uid;
+    }
+
+    // Rules
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data) && (!('role' in request.resource.data) || request.resource.data.role == 'user' || isAdmin());
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.role == resource.data.role || isAdmin());
+    }
+
+    match /products/{productId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isNewDocOwner() && isValidProduct(request.resource.data);
+      allow update: if isDocOwner() && isValidProduct(request.resource.data) && request.resource.data.ownerUid == resource.data.ownerUid;
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /sales/{saleId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isNewDocOwner() && isValidSale(request.resource.data);
+      allow update: if isDocOwner() && isValidSale(request.resource.data) && request.resource.data.ownerUid == resource.data.ownerUid;
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /expenses/{expenseId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isNewDocOwner() && isValidExpense(request.resource.data);
+      allow update: if isDocOwner() && isValidExpense(request.resource.data) && request.resource.data.ownerUid == resource.data.ownerUid;
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /incomes/{incomeId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isNewDocOwner() && isValidIncome(request.resource.data);
+      allow update: if isDocOwner() && isValidIncome(request.resource.data) && request.resource.data.ownerUid == resource.data.ownerUid;
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /settings/{userId} {
+      allow read, write: if isOwner(userId) || isAdmin();
+    }
+  }
+}

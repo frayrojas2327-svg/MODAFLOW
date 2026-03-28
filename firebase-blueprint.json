@@ -1,0 +1,87 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Information about the entrepreneur's profile.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The unique ID of the user." },
+        "email": { "type": "string", "format": "email", "description": "User's email address." },
+        "displayName": { "type": "string", "description": "User's display name." },
+        "companyName": { "type": "string", "description": "User's company or brand name." },
+        "role": { "type": "string", "enum": ["admin", "user"], "description": "User's role in the system." }
+      },
+      "required": ["uid", "email"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Clothing product in inventory.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "design": { "type": "string" },
+        "price": { "type": "number" },
+        "cost": { "type": "number" },
+        "variants": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "ownerUid": { "type": "string" }
+      },
+      "required": ["id", "name", "price", "cost", "ownerUid"]
+    },
+    "Sale": {
+      "title": "Sale",
+      "description": "A recorded sale transaction.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "productId": { "type": "string" },
+        "productName": { "type": "string" },
+        "variantId": { "type": "string" },
+        "size": { "type": "string" },
+        "color": { "type": "string" },
+        "quantity": { "type": "number" },
+        "price": { "type": "number" },
+        "discount": { "type": "number" },
+        "total": { "type": "number" },
+        "paymentMethod": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "ownerUid": { "type": "string" }
+      },
+      "required": ["id", "productId", "total", "ownerUid"]
+    },
+    "Expense": {
+      "title": "Expense",
+      "description": "A recorded business expense.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "amount": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" },
+        "ownerUid": { "type": "string" }
+      },
+      "required": ["id", "description", "amount", "ownerUid"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile documents."
+    },
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Inventory products."
+    },
+    "/sales/{saleId}": {
+      "schema": "Sale",
+      "description": "Sales records."
+    },
+    "/expenses/{expenseId}": {
+      "schema": "Expense",
+      "description": "Expense records."
+    }
+  }
+}
