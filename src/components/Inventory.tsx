@@ -16,9 +16,12 @@ import {
   Upload,
   LayoutGrid,
   List,
-  Calendar
+  Calendar,
+  CreditCard,
+  Wallet,
+  Smartphone
 } from 'lucide-react';
-import { AppState, Product, Category, Variant, Sale } from '../types';
+import { AppState, Product, Category, Variant, Sale, PaymentMethod } from '../types';
 import { formatCurrency, generateId, cn } from '../lib/utils';
 import { firebaseService } from '../services/firebaseService';
 import { auth } from '../firebase';
@@ -30,9 +33,11 @@ import { toast } from 'sonner';
 interface InventoryProps {
   data: AppState;
   onUpdate: () => void;
+  recentlySold: Set<string>;
+  setRecentlySold: React.Dispatch<React.SetStateAction<Set<string>>>;
 }
 
-export default function Inventory({ data, onUpdate }: InventoryProps) {
+export default function Inventory({ data, onUpdate, recentlySold, setRecentlySold }: InventoryProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -77,15 +82,23 @@ export default function Inventory({ data, onUpdate }: InventoryProps) {
   });
 
   const [processingSale, setProcessingSale] = useState<string | null>(null);
-  const [recentlySold, setRecentlySold] = useState<Set<string>>(new Set());
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [quickSaleItem, setQuickSaleItem] = useState<{ product: Product, variant: Variant } | null>(null);
 
-  const handleQuickSale = async (product: Product, variant: Variant) => {
+  const handleQuickSale = (product: Product, variant: Variant) => {
     if (variant.stock <= 0 || processingSale === variant.id || recentlySold.has(variant.id)) {
       return;
     }
+    setQuickSaleItem({ product, variant });
+  };
+
+  const completeQuickSale = async (paymentMethod: PaymentMethod) => {
+    if (!quickSaleItem) return;
+    const { product, variant } = quickSaleItem;
 
     setProcessingSale(variant.id);
+    setQuickSaleItem(null);
+    
     try {
       const sale: Sale = {
         id: generateId(),
@@ -99,14 +112,14 @@ export default function Inventory({ data, onUpdate }: InventoryProps) {
         cost: product.cost,
         discount: 0,
         total: product.price,
-        paymentMethod: 'Efectivo',
+        paymentMethod,
         date: new Date().toISOString(),
         ownerUid: auth.currentUser?.uid || ''
       };
 
       await firebaseService.addSale(sale);
       setRecentlySold(prev => new Set(prev).add(variant.id));
-      toast.success(`¡Vendido! ${product.name} - ${variant.size} ${variant.color}`);
+      toast.success(`¡Vendido! (${paymentMethod}) ${product.name} - ${variant.size}`);
       onUpdate();
     } catch (error) {
       console.error('Error in quick sale:', error);
@@ -145,7 +158,7 @@ export default function Inventory({ data, onUpdate }: InventoryProps) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl md:text-3xl font-bold tracking-tight">Inventario</h1>
-          <p className="text-white/50 mt-0.5 text-xs md:text-sm">Gestiona tus productos, tallas y stock.</p>
+          <p className="text-white/50 mt-0.5 text-[15px] md:text-[16px]">Gestiona tus productos, tallas y stock.</p>
         </div>
         <div className="flex items-center gap-2 md:gap-3">
           <button 
@@ -167,7 +180,7 @@ export default function Inventory({ data, onUpdate }: InventoryProps) {
               setEditingProduct(null);
               setIsModalOpen(true);
             }}
-            className="flex items-center justify-center gap-2 px-4 md:px-6 py-2 md:py-2.5 bg-orange-500 hover:bg-orange-600 text-black rounded-xl transition-all font-bold shadow-[0_0_20px_rgba(249,115,22,0.3)] text-sm md:text-base"
+            className="flex items-center justify-center gap-2 px-4 md:px-6 py-2 md:py-2.5 bg-orange-500 hover:bg-orange-600 text-black rounded-xl transition-all font-bold shadow-[0_0_20px_rgba(249,115,22,0.3)] text-[16px] md:text-base"
           >
             <Plus className="w-4 h-4 md:w-5 md:h-5" />
             Nuevo Producto
@@ -183,7 +196,7 @@ export default function Inventory({ data, onUpdate }: InventoryProps) {
               key={range}
               onClick={() => handleRangeChange(range)}
               className={cn(
-                "px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-bold transition-all uppercase whitespace-nowrap",
+                "px-3 py-1.5 rounded-lg text-[15px] md:text-[15px] font-bold transition-all uppercase whitespace-nowrap",
                 timeRange === range ? "bg-orange-500 text-black" : "text-white/40 hover:text-white"
               )}
             >
@@ -193,7 +206,7 @@ export default function Inventory({ data, onUpdate }: InventoryProps) {
           <button 
             onClick={() => handleRangeChange('all')}
             className={cn(
-              "px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-bold transition-all uppercase whitespace-nowrap",
+              "px-3 py-1.5 rounded-lg text-[15px] md:text-[15px] font-bold transition-all uppercase whitespace-nowrap",
               timeRange === 'all' ? "bg-orange-500 text-black" : "text-white/40 hover:text-white"
             )}
           >
@@ -203,7 +216,7 @@ export default function Inventory({ data, onUpdate }: InventoryProps) {
         
         {timeRange !== 'all' && (
           <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-xl border border-white/10">
-            <Calendar className="w-5 h-5 text-orange-500" />
+            <Calendar className="w-6 h-6 text-orange-500" />
             <div className="flex items-center gap-1">
               <input 
                 type="date" 
@@ -215,7 +228,7 @@ export default function Inventory({ data, onUpdate }: InventoryProps) {
                     setTimeRange('custom' as any);
                   }
                 }}
-                className="bg-transparent text-[10px] md:text-xs font-medium focus:outline-none text-white/60 hover:text-white transition-colors"
+                className="bg-transparent text-[15px] md:text-[15px] font-medium focus:outline-none text-white/60 hover:text-white transition-colors"
               />
               <span className="text-white/20">-</span>
               <input 
@@ -228,7 +241,7 @@ export default function Inventory({ data, onUpdate }: InventoryProps) {
                     setTimeRange('custom' as any);
                   }
                 }}
-                className="bg-transparent text-[10px] md:text-xs font-medium focus:outline-none text-white/60 hover:text-white transition-colors"
+                className="bg-transparent text-[15px] md:text-[15px] font-medium focus:outline-none text-white/60 hover:text-white transition-colors"
               />
             </div>
           </div>
@@ -244,7 +257,7 @@ export default function Inventory({ data, onUpdate }: InventoryProps) {
             placeholder="Buscar por nombre o diseño..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-black border border-white/5 rounded-xl py-2 md:py-3 pl-11 md:pl-12 pr-4 focus:outline-none focus:border-orange-500/50 transition-colors text-sm md:text-base"
+            className="w-full bg-black border border-white/5 rounded-xl py-2 md:py-3 pl-11 md:pl-12 pr-4 focus:outline-none focus:border-orange-500/50 transition-colors text-[16px] md:text-base"
           />
         </div>
         <div className="flex gap-2 overflow-x-auto pb-1 md:pb-0 no-scrollbar">
@@ -253,7 +266,7 @@ export default function Inventory({ data, onUpdate }: InventoryProps) {
               key={cat}
               onClick={() => setSelectedCategory(cat)}
               className={cn(
-                "px-3 md:px-4 py-1.5 md:py-2 rounded-xl border transition-all whitespace-nowrap text-xs md:text-sm font-medium",
+                "px-3 md:px-4 py-1.5 md:py-2 rounded-xl border transition-all whitespace-nowrap text-[15px] md:text-[16px] font-medium",
                 selectedCategory === cat 
                   ? "bg-orange-500/10 border-orange-500/50 text-orange-500" 
                   : "bg-black border-white/10 text-white/40 hover:text-white hover:border-white/20"
@@ -292,14 +305,14 @@ export default function Inventory({ data, onUpdate }: InventoryProps) {
           <table className="w-full text-left border-collapse min-w-full">
             <thead>
               <tr className="border-b border-white/5 bg-white/[0.02]">
-                <th className="px-6 py-4 text-xs font-bold text-white/40 uppercase tracking-wider">Producto</th>
-                <th className="px-6 py-4 text-xs font-bold text-white/40 uppercase tracking-wider">Categoría</th>
-                <th className="px-6 py-4 text-xs font-bold text-white/40 uppercase tracking-wider">Precio</th>
-                <th className="px-6 py-4 text-xs font-bold text-white/40 uppercase tracking-wider">Talla / Color</th>
-                <th className="px-6 py-4 text-xs font-bold text-white/40 uppercase tracking-wider">Stock</th>
-                <th className="px-6 py-4 text-xs font-bold text-white/40 uppercase tracking-wider text-center">Estado</th>
-                <th className="px-6 py-4 text-xs font-bold text-white/40 uppercase tracking-wider text-center">Acción</th>
-                <th className="px-6 py-4 text-xs font-bold text-white/40 uppercase tracking-wider">Editar</th>
+                <th className="px-6 py-4 text-[15px] font-bold text-white/40 uppercase tracking-wider">Producto</th>
+                <th className="px-6 py-4 text-[15px] font-bold text-white/40 uppercase tracking-wider">Categoría</th>
+                <th className="px-6 py-4 text-[15px] font-bold text-white/40 uppercase tracking-wider">Precio</th>
+                <th className="px-6 py-4 text-[15px] font-bold text-white/40 uppercase tracking-wider">Talla / Color</th>
+                <th className="px-6 py-4 text-[15px] font-bold text-white/40 uppercase tracking-wider">Stock</th>
+                <th className="px-6 py-4 text-[15px] font-bold text-white/40 uppercase tracking-wider text-center">Estado</th>
+                <th className="px-6 py-4 text-[15px] font-bold text-white/40 uppercase tracking-wider text-center">Acción</th>
+                <th className="px-6 py-4 text-[15px] font-bold text-white/40 uppercase tracking-wider">Editar</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -321,46 +334,46 @@ export default function Inventory({ data, onUpdate }: InventoryProps) {
                         )}
                       </div>
                       <div>
-                        <p className="font-semibold text-sm">{item.name}</p>
-                        <p className="text-xs text-white/40">{item.design}</p>
+                        <p className="font-semibold text-[16px]">{item.name}</p>
+                        <p className="text-[15px] text-white/40">{item.design}</p>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="px-2.5 py-1 bg-white/5 rounded-full text-[10px] font-bold uppercase tracking-wider text-white/60">
+                    <span className="px-2.5 py-1 bg-white/5 rounded-full text-[15px] font-bold uppercase tracking-wider text-white/60">
                       {item.category}
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col">
-                      <span className="font-bold text-sm">{formatCurrency(item.price)}</span>
-                      <span className="text-[10px] text-white/20">Costo: {formatCurrency(item.cost)}</span>
+                      <span className="font-bold text-[16px]">{formatCurrency(item.price)}</span>
+                      <span className="text-[15px] text-white/20">Costo: {formatCurrency(item.cost)}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                      <span className="px-2 py-1 bg-orange-500/10 text-orange-500 rounded-lg text-[10px] font-black border border-orange-500/20">{item.variant.size}</span>
-                      <span className="text-xs text-white/60">{item.variant.color}</span>
+                      <span className="px-2 py-1 bg-orange-500/10 text-orange-500 rounded-lg text-[15px] font-black border border-orange-500/20">{item.variant.size}</span>
+                      <span className="text-[15px] text-white/60">{item.variant.color}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       <span className={cn(
-                        "text-sm font-bold",
+                        "text-[16px] font-bold",
                         item.variant.stock <= 5 ? "text-orange-500" : "text-white/60"
                       )}>
                         {item.variant.stock}
                       </span>
-                      <span className="text-[10px] text-white/20 uppercase tracking-tighter">unid.</span>
+                      <span className="text-[15px] text-white/20 uppercase tracking-tighter">unid.</span>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-center">
                     {(item.variant.stock > 0 && !recentlySold.has(item.variant.id)) ? (
-                      <span className="px-2 py-1 bg-blue-500/10 text-blue-400 rounded-lg text-[9px] font-bold uppercase tracking-widest border border-blue-500/20">
+                      <span className="px-2 py-1 bg-blue-500/10 text-blue-400 rounded-lg text-[15px] font-bold uppercase tracking-widest border border-blue-500/20">
                         No Vendido
                       </span>
                     ) : (
-                      <span className="px-2 py-1 bg-green-500/10 text-green-500 rounded-lg text-[9px] font-bold uppercase tracking-widest border border-green-500/20">
+                      <span className="px-2 py-1 bg-green-500/10 text-green-500 rounded-lg text-[15px] font-bold uppercase tracking-widest border border-green-500/20">
                         Vendido
                       </span>
                     )}
@@ -371,7 +384,7 @@ export default function Inventory({ data, onUpdate }: InventoryProps) {
                       onClick={() => handleQuickSale(item as Product, item.variant)}
                       disabled={item.variant.stock <= 0 || processingSale === item.variant.id || recentlySold.has(item.variant.id)}
                       className={cn(
-                        "flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all text-[10px] font-black uppercase tracking-wider mx-auto min-w-[100px] justify-center",
+                        "flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all text-[15px] font-black uppercase tracking-wider mx-auto min-w-[100px] justify-center",
                         (item.variant.stock > 0 && !recentlySold.has(item.variant.id))
                           ? "bg-green-500 hover:bg-green-600 text-black shadow-[0_0_15px_rgba(34,197,94,0.3)]"
                           : "bg-white/5 text-white/10 cursor-not-allowed border border-white/5",
@@ -383,7 +396,7 @@ export default function Inventory({ data, onUpdate }: InventoryProps) {
                       ) : (
                         <Zap className="w-3.5 h-3.5" />
                       )}
-                      {processingSale === item.variant.id ? '...' : (recentlySold.has(item.variant.id) || item.variant.stock <= 0 ? 'Vendido' : 'Vendido')}
+                      {processingSale === item.variant.id ? '...' : (recentlySold.has(item.variant.id) || item.variant.stock <= 0 ? 'Vendido' : 'Vender')}
                     </motion.button>
                   </td>
                   <td className="px-6 py-4">
@@ -435,7 +448,7 @@ export default function Inventory({ data, onUpdate }: InventoryProps) {
                   </div>
                 )}
                 <div className="absolute top-3 left-3">
-                  <span className="px-2 py-1 bg-black/60 backdrop-blur-md border border-white/10 rounded-lg text-[10px] font-bold uppercase tracking-wider text-white/80">
+                  <span className="px-2 py-1 bg-black/60 backdrop-blur-md border border-white/10 rounded-lg text-[15px] font-bold uppercase tracking-wider text-white/80">
                     {item.category}
                   </span>
                 </div>
@@ -460,36 +473,36 @@ export default function Inventory({ data, onUpdate }: InventoryProps) {
               <div className="p-4 flex-1 flex flex-col">
                 <div className="flex justify-between items-start mb-2">
                   <div>
-                    <h3 className="font-bold text-sm text-white">{item.name}</h3>
-                    <p className="text-[10px] text-white/40 uppercase tracking-widest">{item.design}</p>
+                    <h3 className="font-bold text-[16px] text-white">{item.name}</h3>
+                    <p className="text-[15px] text-white/40 uppercase tracking-widest">{item.design}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-black text-sm text-orange-500">{formatCurrency(item.price)}</p>
-                    <p className="text-[9px] text-white/20">Costo: {formatCurrency(item.cost)}</p>
+                    <p className="font-black text-[16px] text-orange-500">{formatCurrency(item.price)}</p>
+                    <p className="text-[15px] text-white/20">Costo: {formatCurrency(item.cost)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 mb-4">
-                  <span className="px-2 py-0.5 bg-orange-500/10 text-orange-500 rounded-lg text-[10px] font-black border border-orange-500/20">
+                  <span className="px-2 py-0.5 bg-orange-500/10 text-orange-500 rounded-lg text-[15px] font-black border border-orange-500/20">
                     {item.variant.size}
                   </span>
-                  <span className="text-[10px] text-white/40 uppercase">{item.variant.color}</span>
+                  <span className="text-[15px] text-white/40 uppercase">{item.variant.color}</span>
                   <div className="ml-auto flex items-center gap-1">
                     <span className={cn(
-                      "text-xs font-bold",
+                      "text-[15px] font-bold",
                       item.variant.stock <= 5 ? "text-orange-500" : "text-white/60"
                     )}>
                       {item.variant.stock}
                     </span>
-                    <span className="text-[9px] text-white/20 uppercase">unid.</span>
+                    <span className="text-[15px] text-white/20 uppercase">unid.</span>
                   </div>
                 </div>
                 <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between gap-3">
-                  {(item.variant.stock > 0 && !recentlySold.has(item.variant.id)) ? (
-                    <span className="px-2 py-1 bg-blue-500/10 text-blue-400 rounded-lg text-[9px] font-bold uppercase tracking-widest border border-blue-500/20">
+                {(item.variant.stock > 0 && !recentlySold.has(item.variant.id)) ? (
+                    <span className="px-2 py-1 bg-blue-500/10 text-blue-400 rounded-lg text-[15px] font-bold uppercase tracking-widest border border-blue-500/20">
                       No Vendido
                     </span>
                   ) : (
-                    <span className="px-2 py-1 bg-green-500/10 text-green-500 rounded-lg text-[9px] font-bold uppercase tracking-widest border border-green-500/20">
+                    <span className="px-2 py-1 bg-green-500/10 text-green-500 rounded-lg text-[15px] font-bold uppercase tracking-widest border border-green-500/20">
                       Vendido
                     </span>
                   )}
@@ -498,7 +511,7 @@ export default function Inventory({ data, onUpdate }: InventoryProps) {
                     onClick={() => handleQuickSale(item as Product, item.variant)}
                     disabled={item.variant.stock <= 0 || processingSale === item.variant.id || recentlySold.has(item.variant.id)}
                     className={cn(
-                      "flex-1 flex items-center gap-1.5 px-4 py-2.5 rounded-xl transition-all text-[10px] font-black uppercase tracking-wider justify-center",
+                      "flex-1 flex items-center gap-1.5 px-4 py-2.5 rounded-xl transition-all text-[15px] font-black uppercase tracking-wider justify-center",
                       (item.variant.stock > 0 && !recentlySold.has(item.variant.id))
                         ? "bg-green-500 text-black shadow-[0_0_15px_rgba(34,197,94,0.3)]"
                         : "bg-white/5 text-white/10 cursor-not-allowed border border-white/5",
@@ -510,7 +523,7 @@ export default function Inventory({ data, onUpdate }: InventoryProps) {
                     ) : (
                       <Zap className="w-3.5 h-3.5" />
                     )}
-                    {processingSale === item.variant.id ? '...' : (recentlySold.has(item.variant.id) || item.variant.stock <= 0 ? 'Vendido' : 'Vendido')}
+                    {processingSale === item.variant.id ? '...' : (recentlySold.has(item.variant.id) || item.variant.stock <= 0 ? 'Vendido' : 'Vender')}
                   </motion.button>
                 </div>
               </div>
@@ -545,38 +558,38 @@ export default function Inventory({ data, onUpdate }: InventoryProps) {
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="font-bold text-sm text-white truncate">{item.name}</h3>
-                    <p className="text-[10px] text-white/40 uppercase tracking-wider">{item.design}</p>
+                    <h3 className="font-bold text-[16px] text-white truncate">{item.name}</h3>
+                    <p className="text-[15px] text-white/40 uppercase tracking-wider">{item.design}</p>
                   </div>
-                  <span className="px-2 py-0.5 bg-white/5 rounded-full text-[9px] font-bold uppercase tracking-wider text-white/60">
+                  <span className="px-2 py-0.5 bg-white/5 rounded-full text-[15px] font-bold uppercase tracking-wider text-white/60">
                     {item.category}
                   </span>
                 </div>
                 <div className="mt-2 flex items-center gap-2">
-                  <span className="px-2 py-0.5 bg-orange-500/10 text-orange-500 rounded-lg text-[10px] font-black border border-orange-500/20">
+                  <span className="px-2 py-0.5 bg-orange-500/10 text-orange-500 rounded-lg text-[15px] font-black border border-orange-500/20">
                     {item.variant.size}
                   </span>
-                  <span className="text-[10px] text-white/40 uppercase">{item.variant.color}</span>
+                  <span className="text-[15px] text-white/40 uppercase">{item.variant.color}</span>
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4 py-3 border-y border-white/5">
               <div>
-                <p className="text-[9px] font-bold text-white/20 uppercase tracking-widest mb-1">Precio</p>
-                <p className="font-bold text-sm text-white">{formatCurrency(item.price)}</p>
-                <p className="text-[9px] text-white/20">Costo: {formatCurrency(item.cost)}</p>
+                <p className="text-[15px] font-bold text-white/20 uppercase tracking-widest mb-1">Precio</p>
+                <p className="font-bold text-[16px] text-white">{formatCurrency(item.price)}</p>
+                <p className="text-[15px] text-white/20">Costo: {formatCurrency(item.cost)}</p>
               </div>
               <div className="text-right">
-                <p className="text-[9px] font-bold text-white/20 uppercase tracking-widest mb-1">Stock</p>
+                <p className="text-[15px] font-bold text-white/20 uppercase tracking-widest mb-1">Stock</p>
                 <div className="flex items-center justify-end gap-1">
                   <span className={cn(
-                    "text-sm font-bold",
+                    "text-[16px] font-bold",
                     item.variant.stock <= 5 ? "text-orange-500" : "text-white/60"
                   )}>
                     {item.variant.stock}
                   </span>
-                  <span className="text-[9px] text-white/20 uppercase">unid.</span>
+                  <span className="text-[15px] text-white/20 uppercase">unid.</span>
                 </div>
               </div>
             </div>
@@ -584,11 +597,11 @@ export default function Inventory({ data, onUpdate }: InventoryProps) {
             <div className="flex items-center justify-between gap-3 pt-1">
               <div className="flex items-center gap-2">
                 {(item.variant.stock > 0 && !recentlySold.has(item.variant.id)) ? (
-                  <span className="px-2 py-1 bg-blue-500/10 text-blue-400 rounded-lg text-[9px] font-bold uppercase tracking-widest border border-blue-500/20">
+                  <span className="px-2 py-1 bg-blue-500/10 text-blue-400 rounded-lg text-[15px] font-bold uppercase tracking-widest border border-blue-500/20">
                     No Vendido
                   </span>
                 ) : (
-                  <span className="px-2 py-1 bg-green-500/10 text-green-500 rounded-lg text-[9px] font-bold uppercase tracking-widest border border-green-500/20">
+                  <span className="px-2 py-1 bg-green-500/10 text-green-500 rounded-lg text-[15px] font-bold uppercase tracking-widest border border-green-500/20">
                     Vendido
                   </span>
                 )}
@@ -616,7 +629,7 @@ export default function Inventory({ data, onUpdate }: InventoryProps) {
                 onClick={() => handleQuickSale(item as Product, item.variant)}
                 disabled={item.variant.stock <= 0 || processingSale === item.variant.id || recentlySold.has(item.variant.id)}
                 className={cn(
-                  "flex-1 flex items-center gap-1.5 px-4 py-2.5 rounded-xl transition-all text-[10px] font-black uppercase tracking-wider justify-center",
+                  "flex-1 flex items-center gap-1.5 px-4 py-2.5 rounded-xl transition-all text-[15px] font-black uppercase tracking-wider justify-center",
                   (item.variant.stock > 0 && !recentlySold.has(item.variant.id))
                     ? "bg-green-500 text-black shadow-[0_0_15px_rgba(34,197,94,0.3)]"
                     : "bg-white/5 text-white/10 cursor-not-allowed border border-white/5",
@@ -628,7 +641,7 @@ export default function Inventory({ data, onUpdate }: InventoryProps) {
                 ) : (
                   <Zap className="w-3.5 h-3.5" />
                 )}
-                {processingSale === item.variant.id ? '...' : (recentlySold.has(item.variant.id) || item.variant.stock <= 0 ? 'Vendido' : 'Vendido')}
+                {processingSale === item.variant.id ? '...' : (recentlySold.has(item.variant.id) || item.variant.stock <= 0 ? 'Vendido' : 'Vender')}
               </motion.button>
             </div>
           </motion.div>
@@ -636,7 +649,7 @@ export default function Inventory({ data, onUpdate }: InventoryProps) {
       </div>
 
       {filteredVariants.length === 0 && (
-        <div className="bg-black rounded-2xl border border-white/5 p-12 text-center text-white/20 text-sm">
+        <div className="bg-black rounded-2xl border border-white/5 p-12 text-center text-white/20 text-[16px]">
           No se encontraron productos o variantes.
         </div>
       )}
@@ -691,7 +704,7 @@ export default function Inventory({ data, onUpdate }: InventoryProps) {
                 <Trash2 className="w-8 h-8 text-red-500" />
               </div>
               <h3 className="text-xl font-bold text-center mb-2">¿Eliminar producto?</h3>
-              <p className="text-white/40 text-center text-sm mb-8">Esta acción no se puede deshacer y eliminará todas las variantes del producto.</p>
+              <p className="text-white/40 text-center text-[16px] mb-8">Esta acción no se puede deshacer y eliminará todas las variantes del producto.</p>
               <div className="flex gap-3">
                 <button 
                   onClick={() => setDeleteConfirmId(null)}
@@ -705,6 +718,68 @@ export default function Inventory({ data, onUpdate }: InventoryProps) {
                 >
                   Eliminar
                 </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Quick Sale Payment Selector */}
+      <AnimatePresence>
+        {quickSaleItem && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="w-full max-w-sm bg-black border border-white/10 rounded-3xl overflow-hidden shadow-2xl"
+            >
+              <div className="p-6 border-b border-white/5 flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-black text-white">Completar Venta</h2>
+                  <p className="text-[15px] text-white/40 uppercase tracking-widest mt-1">
+                    {quickSaleItem.product.name} • {quickSaleItem.variant.size}
+                  </p>
+                </div>
+                <button 
+                  onClick={() => setQuickSaleItem(null)}
+                  className="p-2 hover:bg-white/5 rounded-full transition-colors"
+                >
+                  <X className="w-5 h-5 text-white/40" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-6">
+                <div className="space-y-3">
+                  <label className="text-[15px] font-black text-white/40 uppercase tracking-[0.2em]">Método de Pago</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { id: 'Efectivo', icon: Wallet, color: 'bg-green-500' },
+                      { id: 'Yape', icon: Smartphone, color: 'bg-purple-600' },
+                      { id: 'Plin', icon: Smartphone, color: 'bg-cyan-500' },
+                      { id: 'Transferencia', icon: CreditCard, color: 'bg-blue-500' },
+                    ].map((method) => (
+                      <button
+                        key={method.id}
+                        onClick={() => completeQuickSale(method.id as PaymentMethod)}
+                        className="group relative flex flex-col items-center gap-3 p-4 bg-white/5 border border-white/5 rounded-2xl hover:border-white/20 hover:bg-white/[0.08] transition-all"
+                      >
+                        <div className={cn(
+                          "w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 shadow-lg",
+                          method.color
+                        )}>
+                          <method.icon className="w-5 h-5 text-black" />
+                        </div>
+                        <span className="text-[15px] font-black text-white uppercase tracking-wider">{method.id}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-white/5 flex items-center justify-between">
+                  <span className="text-[15px] text-white/40 font-bold uppercase tracking-widest">Total a Cobrar</span>
+                  <span className="text-2xl font-black text-orange-500">{formatCurrency(quickSaleItem.product.price)}</span>
+                </div>
               </div>
             </motion.div>
           </div>
@@ -801,7 +876,7 @@ function CategoryManagementModal({
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleAdd()}
-              className="flex-1 bg-black border border-white/10 rounded-xl py-2.5 px-4 focus:outline-none focus:border-orange-500/50 text-sm"
+              className="flex-1 bg-black border border-white/10 rounded-xl py-2.5 px-4 focus:outline-none focus:border-orange-500/50 text-[15px]"
               placeholder="Nueva categoría..."
             />
             <button 
@@ -815,7 +890,7 @@ function CategoryManagementModal({
           <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
             {newCats.map(cat => (
               <div key={cat} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
-                <span className="text-sm font-medium">{cat}</span>
+                <span className="text-[15px] font-medium">{cat}</span>
                 <button 
                   onClick={() => handleRemove(cat)}
                   className="p-1 text-white/20 hover:text-red-500 transition-colors"
@@ -930,23 +1005,23 @@ function ProductModal({ product, categories, onClose, onSave }: { product: Produ
         <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-4 md:space-y-6 max-h-[75vh] overflow-y-auto custom-scrollbar">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <div className="space-y-2">
-              <label className="text-[10px] md:text-xs font-bold text-white/40 uppercase tracking-wider">Nombre</label>
+              <label className="text-[15px] md:text-[15px] font-bold text-white/40 uppercase tracking-wider">Nombre</label>
               <input 
                 required
                 type="text" 
                 value={formData.name}
                 onChange={e => setFormData({ ...formData, name: e.target.value })}
-                className="w-full bg-black border border-white/10 rounded-xl py-2.5 md:py-3 px-4 focus:outline-none focus:border-orange-500/50 text-sm md:text-base"
+                className="w-full bg-black border border-white/10 rounded-xl py-2.5 md:py-3 px-4 focus:outline-none focus:border-orange-500/50 text-[15px] md:text-[16px]"
                 placeholder="Ej: Polo Oversize"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] md:text-xs font-bold text-white/40 uppercase tracking-wider">Categoría</label>
+              <label className="text-[15px] md:text-[15px] font-bold text-white/40 uppercase tracking-wider">Categoría</label>
               <div className="relative">
                 <select 
                   value={formData.category}
                   onChange={e => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full bg-black border border-white/10 rounded-xl py-2.5 md:py-3 px-4 focus:outline-none focus:border-orange-500/50 appearance-none text-sm md:text-base text-white"
+                  className="w-full bg-black border border-white/10 rounded-xl py-2.5 md:py-3 px-4 focus:outline-none focus:border-orange-500/50 appearance-none text-[15px] md:text-[16px] text-white"
                 >
                   {categories.map(cat => (
                     <option key={cat} value={cat} className="bg-black text-white">{cat}</option>
@@ -956,17 +1031,17 @@ function ProductModal({ product, categories, onClose, onSave }: { product: Produ
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] md:text-xs font-bold text-white/40 uppercase tracking-wider">Diseño / Colección</label>
+              <label className="text-[15px] md:text-[15px] font-bold text-white/40 uppercase tracking-wider">Diseño / Colección</label>
               <input 
                 type="text" 
                 value={formData.design}
                 onChange={e => setFormData({ ...formData, design: e.target.value })}
-                className="w-full bg-black border border-white/10 rounded-xl py-2.5 md:py-3 px-4 focus:outline-none focus:border-orange-500/50 text-sm md:text-base"
+                className="w-full bg-black border border-white/10 rounded-xl py-2.5 md:py-3 px-4 focus:outline-none focus:border-orange-500/50 text-[15px] md:text-[16px]"
                 placeholder="Ej: Verano 2024"
               />
             </div>
             <div className="space-y-2 md:col-span-2">
-              <label className="text-[10px] md:text-xs font-bold text-white/40 uppercase tracking-wider">Imagen del Producto</label>
+              <label className="text-[15px] md:text-[15px] font-bold text-white/40 uppercase tracking-wider">Imagen del Producto</label>
               <div className="flex flex-col md:flex-row gap-3">
                 <div className="flex-1 relative">
                   <ImageIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
@@ -974,12 +1049,12 @@ function ProductModal({ product, categories, onClose, onSave }: { product: Produ
                     type="url" 
                     value={formData.imageUrl}
                     onChange={e => setFormData({ ...formData, imageUrl: e.target.value })}
-                    className="w-full bg-black border border-white/10 rounded-xl py-2.5 md:py-3 px-11 focus:outline-none focus:border-orange-500/50 text-sm md:text-base"
+                    className="w-full bg-black border border-white/10 rounded-xl py-2.5 md:py-3 px-11 focus:outline-none focus:border-orange-500/50 text-[15px] md:text-[16px]"
                     placeholder="URL de la imagen o sube una..."
                   />
                 </div>
                 <div className="flex gap-2">
-                  <label className="flex items-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl cursor-pointer transition-all text-xs md:text-sm font-bold shrink-0">
+                  <label className="flex items-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl cursor-pointer transition-all text-[15px] md:text-[16px] font-bold shrink-0">
                     <Upload className="w-4 h-4 text-orange-500" />
                     Subir
                     <input 
@@ -1004,29 +1079,29 @@ function ProductModal({ product, categories, onClose, onSave }: { product: Produ
                   )}
                 </div>
               </div>
-              <p className="text-[9px] text-white/20">Puedes pegar una URL o subir una imagen directamente (Máx. 1MB).</p>
+              <p className="text-[15px] text-white/20">Puedes pegar una URL o subir una imagen directamente (Máx. 1MB).</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-[10px] md:text-xs font-bold text-white/40 uppercase tracking-wider">Precio Venta</label>
+                <label className="text-[15px] md:text-[15px] font-bold text-white/40 uppercase tracking-wider">Precio Venta</label>
                 <input 
                   required
                   type="number" 
                   value={formData.price === 0 ? '' : formData.price}
                   onChange={e => setFormData({ ...formData, price: e.target.value === '' ? 0 : Number(e.target.value) })}
                   onFocus={e => e.target.select()}
-                  className="w-full bg-black border border-white/10 rounded-xl py-2.5 md:py-3 px-4 focus:outline-none focus:border-orange-500/50 text-sm md:text-base"
+                  className="w-full bg-black border border-white/10 rounded-xl py-2.5 md:py-3 px-4 focus:outline-none focus:border-orange-500/50 text-[15px] md:text-[16px]"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] md:text-xs font-bold text-white/40 uppercase tracking-wider">Costo Prod.</label>
+                <label className="text-[15px] md:text-[15px] font-bold text-white/40 uppercase tracking-wider">Costo Prod.</label>
                 <input 
                   required
                   type="number" 
                   value={formData.cost === 0 ? '' : formData.cost}
                   onChange={e => setFormData({ ...formData, cost: e.target.value === '' ? 0 : Number(e.target.value) })}
                   onFocus={e => e.target.select()}
-                  className="w-full bg-black border border-white/10 rounded-xl py-2.5 md:py-3 px-4 focus:outline-none focus:border-orange-500/50 text-sm md:text-base"
+                  className="w-full bg-black border border-white/10 rounded-xl py-2.5 md:py-3 px-4 focus:outline-none focus:border-orange-500/50 text-[15px] md:text-[16px]"
                 />
               </div>
             </div>
@@ -1034,11 +1109,11 @@ function ProductModal({ product, categories, onClose, onSave }: { product: Produ
 
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <label className="text-[10px] md:text-xs font-bold text-white/40 uppercase tracking-wider">Variantes (Tallas y Colores)</label>
+              <label className="text-[15px] md:text-[15px] font-bold text-white/40 uppercase tracking-wider">Variantes (Tallas y Colores)</label>
               <button 
                 type="button"
                 onClick={handleAddVariant}
-                className="text-[10px] md:text-xs font-bold text-orange-500 hover:text-orange-400 flex items-center gap-1"
+                className="text-[15px] md:text-[15px] font-bold text-orange-500 hover:text-orange-400 flex items-center gap-1"
               >
                 <Plus className="w-3 h-3" /> Agregar Variante
               </button>
@@ -1048,43 +1123,43 @@ function ProductModal({ product, categories, onClose, onSave }: { product: Produ
               {formData.variants?.map((variant, index) => (
                 <div key={variant.id} className="grid grid-cols-1 md:grid-cols-5 gap-2 md:gap-3 items-end bg-white/[0.02] p-3 md:p-4 rounded-xl border border-white/5">
                   <div className="space-y-1">
-                    <span className="text-[9px] md:text-[10px] text-white/30 uppercase">Talla</span>
+                    <span className="text-[15px] md:text-[15px] text-white/30 uppercase">Talla</span>
                     <input 
                       type="text" 
                       value={variant.size}
                       onChange={e => handleVariantChange(variant.id, 'size', e.target.value)}
-                      className="w-full bg-black border border-white/10 rounded-lg py-1.5 px-2 text-xs md:text-sm focus:outline-none focus:border-orange-500/50"
+                      className="w-full bg-black border border-white/10 rounded-lg py-1.5 px-2 text-[15px] md:text-[16px] focus:outline-none focus:border-orange-500/50"
                       placeholder="M, L..."
                     />
                   </div>
                   <div className="space-y-1">
-                    <span className="text-[9px] md:text-[10px] text-white/30 uppercase">Color</span>
+                    <span className="text-[15px] md:text-[15px] text-white/30 uppercase">Color</span>
                     <input 
                       type="text" 
                       value={variant.color}
                       onChange={e => handleVariantChange(variant.id, 'color', e.target.value)}
-                      className="w-full bg-black border border-white/10 rounded-lg py-1.5 px-2 text-xs md:text-sm focus:outline-none focus:border-orange-500/50"
+                      className="w-full bg-black border border-white/10 rounded-lg py-1.5 px-2 text-[15px] md:text-[16px] focus:outline-none focus:border-orange-500/50"
                       placeholder="Negro..."
                     />
                   </div>
                   <div className="space-y-1">
-                    <span className="text-[9px] md:text-[10px] text-white/30 uppercase">Stock</span>
+                    <span className="text-[15px] md:text-[15px] text-white/30 uppercase">Stock</span>
                     <input 
                       type="number" 
                       value={variant.stock === 0 ? '' : variant.stock}
                       onChange={e => handleVariantChange(variant.id, 'stock', e.target.value === '' ? 0 : Number(e.target.value))}
                       onFocus={e => e.target.select()}
-                      className="w-full bg-black border border-white/10 rounded-lg py-1.5 px-2 text-xs md:text-sm focus:outline-none focus:border-orange-500/50"
+                      className="w-full bg-black border border-white/10 rounded-lg py-1.5 px-2 text-[15px] md:text-[16px] focus:outline-none focus:border-orange-500/50"
                     />
                   </div>
                   <div className="space-y-1">
-                    <span className="text-[9px] md:text-[10px] text-white/30 uppercase">Estado</span>
+                    <span className="text-[15px] md:text-[15px] text-white/30 uppercase">Estado</span>
                     <div className="flex bg-black border border-white/10 rounded-lg overflow-hidden p-0.5">
                       <button
                         type="button"
                         onClick={() => handleVariantChange(variant.id, 'stock', Math.max(1, variant.stock))}
                         className={cn(
-                          "flex-1 py-1 px-1 text-[8px] font-bold rounded transition-all",
+                          "flex-1 py-1 px-1 text-[12px] font-bold rounded transition-all",
                           variant.stock > 0 ? "bg-blue-500 text-black" : "text-white/40 hover:text-white"
                         )}
                       >
@@ -1094,7 +1169,7 @@ function ProductModal({ product, categories, onClose, onSave }: { product: Produ
                         type="button"
                         onClick={() => handleVariantChange(variant.id, 'stock', 0)}
                         className={cn(
-                          "flex-1 py-1 px-1 text-[8px] font-bold rounded transition-all",
+                          "flex-1 py-1 px-1 text-[12px] font-bold rounded transition-all",
                           variant.stock === 0 ? "bg-green-500 text-black" : "text-white/40 hover:text-white"
                         )}
                       >
@@ -1121,13 +1196,13 @@ function ProductModal({ product, categories, onClose, onSave }: { product: Produ
           <button 
             type="button"
             onClick={onClose}
-            className="px-4 md:px-6 py-2 md:py-2.5 text-xs md:text-sm font-bold text-white/40 hover:text-white transition-colors"
+            className="px-4 md:px-6 py-2 md:py-2.5 text-[15px] md:text-[16px] font-bold text-white/40 hover:text-white transition-colors"
           >
             Cancelar
           </button>
           <button 
             onClick={handleSubmit}
-            className="flex items-center gap-2 px-6 md:px-8 py-2 md:py-2.5 bg-orange-500 hover:bg-orange-600 text-black rounded-xl transition-all font-bold shadow-[0_0_20px_rgba(249,115,22,0.3)] text-xs md:text-sm"
+            className="flex items-center gap-2 px-6 md:px-8 py-2 md:py-2.5 bg-orange-500 hover:bg-orange-600 text-black rounded-xl transition-all font-bold shadow-[0_0_20px_rgba(249,115,22,0.3)] text-[15px] md:text-[16px]"
           >
             <Save className="w-4 h-4" />
             Guardar Producto

@@ -12,13 +12,15 @@ import {
   Legend,
   PieChart,
   Pie,
-  Cell
+  Cell,
+  TooltipProps
 } from 'recharts';
-import { AppState } from '../types';
+import { AppState, Sale } from '../types';
 import { formatCurrency, cn } from '../lib/utils';
 import { format, startOfMonth, endOfMonth, eachMonthOfInterval, subMonths, isSameMonth, isWithinInterval, startOfDay, endOfDay, subDays, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Calendar as CalendarIcon, Filter, ArrowUpRight, ArrowDownRight, PieChart as PieIcon, List } from 'lucide-react';
+import { Calendar as CalendarIcon, Filter, ArrowUpRight, ArrowDownRight, PieChart as PieIcon, List, TrendingUp, Palette, Ruler, Shirt } from 'lucide-react';
+import { motion } from 'motion/react';
 
 interface FinancesProps {
   data: AppState;
@@ -100,6 +102,39 @@ export default function Finances({ data }: FinancesProps) {
   const expensePieData = Object.entries(expenseByCategory)
     .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value);
+
+  // Advanced Analysis: Top Designs, Colors, Sizes
+  const salesByDesign = filteredSales.reduce((acc, s) => {
+    const product = data.products.find(p => p.id === s.productId);
+    const design = product?.design || s.productName;
+    acc[design] = (acc[design] || 0) + s.quantity;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const salesByColor = filteredSales.reduce((acc, s) => {
+    acc[s.color] = (acc[s.color] || 0) + s.quantity;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const salesBySize = filteredSales.reduce((acc, s) => {
+    acc[s.size] = (acc[s.size] || 0) + s.quantity;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const topDesigns = Object.entries(salesByDesign)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 5);
+
+  const topColors = Object.entries(salesByColor)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 5);
+
+  const topSizes = Object.entries(salesBySize)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 5);
   
   const COLORS = ['#F97316', '#EF4444', '#3B82F6', '#10B981', '#8B5CF6', '#EC4899', '#6366F1', '#F59E0B'];
 
@@ -120,7 +155,7 @@ export default function Finances({ data }: FinancesProps) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Finanzas Pro</h1>
-          <p className="text-white/50 mt-1 text-sm">Análisis profundo de rentabilidad y flujo de caja.</p>
+          <p className="text-white/50 mt-1 text-[16px]">Análisis profundo de rentabilidad y flujo de caja.</p>
         </div>
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
           <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
@@ -129,7 +164,7 @@ export default function Finances({ data }: FinancesProps) {
                 key={range}
                 onClick={() => handleRangeChange(range)}
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-bold transition-all uppercase",
+                  "px-3 py-1.5 rounded-lg text-[15px] md:text-[15px] font-bold transition-all uppercase",
                   timeRange === range ? "bg-orange-500 text-black" : "text-white/40 hover:text-white"
                 )}
               >
@@ -139,7 +174,7 @@ export default function Finances({ data }: FinancesProps) {
             <button 
               onClick={() => setTimeRange('custom')}
               className={cn(
-                "px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-bold transition-all uppercase",
+                "px-3 py-1.5 rounded-lg text-[15px] md:text-[15px] font-bold transition-all uppercase",
                 timeRange === 'custom' ? "bg-orange-500 text-black" : "text-white/40 hover:text-white"
               )}
             >
@@ -148,7 +183,7 @@ export default function Finances({ data }: FinancesProps) {
           </div>
           
           <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-xl border border-white/10">
-            <CalendarIcon className="w-5 h-5 text-orange-500" />
+            <CalendarIcon className="w-6 h-6 text-orange-500" />
             <div className="flex items-center gap-1">
               <input 
                 type="date" 
@@ -160,7 +195,7 @@ export default function Finances({ data }: FinancesProps) {
                     setTimeRange('custom');
                   }
                 }}
-                className="bg-transparent text-[10px] md:text-xs font-medium focus:outline-none text-white/60 hover:text-white transition-colors"
+                className="bg-transparent text-[15px] md:text-[15px] font-medium focus:outline-none text-white/60 hover:text-white transition-colors"
               />
               <span className="text-white/20">-</span>
               <input 
@@ -173,7 +208,7 @@ export default function Finances({ data }: FinancesProps) {
                     setTimeRange('custom');
                   }
                 }}
-                className="bg-transparent text-[10px] md:text-xs font-medium focus:outline-none text-white/60 hover:text-white transition-colors"
+                className="bg-transparent text-[15px] md:text-[15px] font-medium focus:outline-none text-white/60 hover:text-white transition-colors"
               />
             </div>
           </div>
@@ -184,35 +219,35 @@ export default function Finances({ data }: FinancesProps) {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <div className="bg-black p-5 md:p-6 rounded-2xl border border-white/5 shadow-xl group hover:border-green-500/30 transition-all">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-white/40 text-xs md:text-sm font-medium">Ingresos</p>
+            <p className="text-white/40 text-[15px] md:text-[16px] font-medium">Ingresos</p>
             <ArrowUpRight className="w-4 h-4 text-green-500" />
           </div>
           <h4 className="text-xl md:text-2xl font-bold text-green-500">{formatCurrency(totalRevenue)}</h4>
-          <p className="text-[10px] text-white/20 mt-1">Total acumulado</p>
+          <p className="text-[15px] text-white/20 mt-1">Total acumulado</p>
         </div>
         <div className="bg-black p-5 md:p-6 rounded-2xl border border-white/5 shadow-xl group hover:border-red-500/30 transition-all">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-white/40 text-xs md:text-sm font-medium">Costo de Ventas</p>
+            <p className="text-white/40 text-[15px] md:text-[16px] font-medium">Costo de Ventas</p>
             <ArrowDownRight className="w-4 h-4 text-red-500" />
           </div>
           <h4 className="text-xl md:text-2xl font-bold text-red-500">{formatCurrency(totalCogs)}</h4>
-          <p className="text-[10px] text-white/20 mt-1">Costo de mercadería</p>
+          <p className="text-[15px] text-white/20 mt-1">Costo de mercadería</p>
         </div>
         <div className="bg-black p-5 md:p-6 rounded-2xl border border-white/5 shadow-xl group hover:border-orange-500/30 transition-all">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-white/40 text-xs md:text-sm font-medium">Ganancia Bruta</p>
+            <p className="text-white/40 text-[15px] md:text-[16px] font-medium">Ganancia Bruta</p>
             <div className={cn("w-2 h-2 rounded-full", grossProfit >= 0 ? "bg-green-500" : "bg-red-500")} />
           </div>
           <h4 className="text-xl md:text-2xl font-bold text-orange-500">{formatCurrency(grossProfit)}</h4>
-          <p className="text-[10px] text-white/20 mt-1">Ventas - Costo</p>
+          <p className="text-[15px] text-white/20 mt-1">Ventas - Costo</p>
         </div>
         <div className="bg-black p-5 md:p-6 rounded-2xl border border-white/5 shadow-xl group hover:border-blue-500/30 transition-all">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-white/40 text-xs md:text-sm font-medium">Ganancia Neta</p>
-            <span className="text-[10px] font-bold text-blue-500">ROI</span>
+            <p className="text-white/40 text-[15px] md:text-[16px] font-medium">Ganancia Neta</p>
+            <span className="text-[15px] font-bold text-blue-500">ROI</span>
           </div>
           <h4 className="text-xl md:text-2xl font-bold">{formatCurrency(totalProfit)}</h4>
-          <p className="text-[10px] text-white/20 mt-1">Balance final</p>
+          <p className="text-[15px] text-white/20 mt-1">Balance final</p>
         </div>
       </div>
 
@@ -223,7 +258,7 @@ export default function Finances({ data }: FinancesProps) {
             <BarChart className="w-5 h-5 text-orange-500" />
             Tendencia de Balance
           </h3>
-          <div className="flex items-center gap-4 text-[10px] md:text-xs">
+          <div className="flex items-center gap-4 text-[15px] md:text-[15px]">
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-full bg-green-500"></div>
               <span className="text-white/60">Ingresos</span>
@@ -252,13 +287,13 @@ export default function Finances({ data }: FinancesProps) {
                 dataKey="name" 
                 axisLine={false} 
                 tickLine={false} 
-                tick={{ fill: '#ffffff40', fontSize: 10 }}
+                tick={{ fill: '#ffffff40', fontSize: 15 }}
                 dy={10}
               />
               <YAxis 
                 axisLine={false} 
                 tickLine={false} 
-                tick={{ fill: '#ffffff40', fontSize: 10 }}
+                tick={{ fill: '#ffffff40', fontSize: 15 }}
                 tickFormatter={(value) => `S/${value}`}
               />
               <Tooltip 
@@ -296,12 +331,12 @@ export default function Finances({ data }: FinancesProps) {
               <List className="w-5 h-5 text-orange-500" />
               Desglose Diario
             </h3>
-            <span className="text-[10px] md:text-xs text-white/40">{tableData.length} días con actividad</span>
+            <span className="text-[15px] md:text-[15px] text-white/40">{tableData.length} días con actividad</span>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="text-[10px] uppercase tracking-wider text-white/40 border-b border-white/5">
+                <tr className="text-[15px] uppercase tracking-wider text-white/40 border-b border-white/5">
                   <th className="pb-4 font-medium">Fecha</th>
                   <th className="pb-4 font-medium">Ingresos</th>
                   <th className="pb-4 font-medium">Gastos</th>
@@ -311,13 +346,13 @@ export default function Finances({ data }: FinancesProps) {
               <tbody className="divide-y divide-white/5">
                 {tableData.map((day) => (
                   <tr key={day.fullDate.toISOString()} className="group hover:bg-white/5 transition-colors">
-                    <td className="py-4 text-xs font-medium">
+                    <td className="py-4 text-[15px] font-medium">
                       {format(day.fullDate, 'dd MMM', { locale: es })}
-                      <span className="text-[10px] text-white/20 ml-2 uppercase">{format(day.fullDate, 'EEE', { locale: es })}</span>
+                      <span className="text-[15px] text-white/20 ml-2 uppercase">{format(day.fullDate, 'EEE', { locale: es })}</span>
                     </td>
-                    <td className="py-4 text-xs text-green-500 font-bold">{formatCurrency(day.revenue)}</td>
-                    <td className="py-4 text-xs text-red-400">{formatCurrency(day.expenses)}</td>
-                    <td className="py-4 text-xs text-right font-bold">
+                    <td className="py-4 text-[15px] text-green-500 font-bold">{formatCurrency(day.revenue)}</td>
+                    <td className="py-4 text-[15px] text-red-400">{formatCurrency(day.expenses)}</td>
+                    <td className="py-4 text-[15px] text-right font-bold">
                       <span className={cn(
                         "px-2 py-1 rounded-lg",
                         day.profit >= 0 ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"
@@ -329,7 +364,7 @@ export default function Finances({ data }: FinancesProps) {
                 ))}
                 {tableData.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="py-12 text-center text-white/20 text-sm italic">
+                    <td colSpan={4} className="py-12 text-center text-white/20 text-[16px] italic">
                       No hay transacciones en este periodo.
                     </td>
                   </tr>
@@ -343,7 +378,7 @@ export default function Finances({ data }: FinancesProps) {
         <div className="space-y-6 md:space-y-8">
           {/* Income by Category */}
           <div className="bg-black p-5 md:p-6 rounded-2xl border border-white/5 shadow-xl">
-            <h3 className="text-sm md:text-base font-semibold mb-6 flex items-center gap-2">
+            <h3 className="text-[16px] md:text-base font-semibold mb-6 flex items-center gap-2">
               <PieIcon className="w-4 h-4 text-green-500" />
               Ingresos por Categoría
             </h3>
@@ -371,7 +406,7 @@ export default function Finances({ data }: FinancesProps) {
             </div>
             <div className="mt-4 space-y-2">
               {incomePieData.slice(0, 5).map((item, index) => (
-                <div key={item.name} className="flex items-center justify-between text-[10px]">
+                <div key={item.name} className="flex items-center justify-between text-[15px]">
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
                     <span className="text-white/60 truncate max-w-[100px]">{item.name}</span>
@@ -384,7 +419,7 @@ export default function Finances({ data }: FinancesProps) {
 
           {/* Expenses by Category */}
           <div className="bg-black p-5 md:p-6 rounded-2xl border border-white/5 shadow-xl">
-            <h3 className="text-sm md:text-base font-semibold mb-6 flex items-center gap-2">
+            <h3 className="text-[16px] md:text-base font-semibold mb-6 flex items-center gap-2">
               <PieIcon className="w-4 h-4 text-red-500" />
               Gastos por Categoría
             </h3>
@@ -412,7 +447,7 @@ export default function Finances({ data }: FinancesProps) {
             </div>
             <div className="mt-4 space-y-2">
               {expensePieData.slice(0, 5).map((item, index) => (
-                <div key={item.name} className="flex items-center justify-between text-[10px]">
+                <div key={item.name} className="flex items-center justify-between text-[15px]">
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
                     <span className="text-white/60 truncate max-w-[100px]">{item.name}</span>
@@ -420,6 +455,108 @@ export default function Finances({ data }: FinancesProps) {
                   <span className="font-bold">{formatCurrency(item.value)}</span>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Advanced Analysis Section */}
+      <div className="space-y-6 md:space-y-8">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-orange-500/10 flex items-center justify-center">
+            <TrendingUp className="w-6 h-6 text-orange-500" />
+          </div>
+          <div>
+            <h2 className="text-xl md:text-2xl font-bold">Análisis de Preferencias</h2>
+            <p className="text-white/40 text-[15px] md:text-[16px]">Lo que más buscan tus clientes.</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Top Designs */}
+          <div className="bg-black p-6 rounded-3xl border border-white/5 shadow-2xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+              <Shirt className="w-24 h-24" />
+            </div>
+            <h3 className="text-[16px] font-black uppercase tracking-[0.2em] text-white/40 mb-6 flex items-center gap-2">
+              <Shirt className="w-4 h-4 text-orange-500" />
+              Top Diseños
+            </h3>
+            <div className="space-y-4">
+              {topDesigns.map((item, index) => (
+                <div key={item.name} className="relative">
+                  <div className="flex justify-between items-end mb-1.5">
+                    <span className="text-[15px] font-bold text-white/80">{item.name}</span>
+                    <span className="text-[15px] font-black text-orange-500">{item.value} vendidos</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(item.value / topDesigns[0].value) * 100}%` }}
+                      className="h-full bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.5)]"
+                    />
+                  </div>
+                </div>
+              ))}
+              {topDesigns.length === 0 && <p className="text-[15px] text-white/20 italic">Sin datos de venta</p>}
+            </div>
+          </div>
+
+          {/* Top Colors */}
+          <div className="bg-black p-6 rounded-3xl border border-white/5 shadow-2xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+              <Palette className="w-24 h-24" />
+            </div>
+            <h3 className="text-[16px] font-black uppercase tracking-[0.2em] text-white/40 mb-6 flex items-center gap-2">
+              <Palette className="w-4 h-4 text-blue-500" />
+              Top Colores
+            </h3>
+            <div className="space-y-4">
+              {topColors.map((item, index) => (
+                <div key={item.name} className="relative">
+                  <div className="flex justify-between items-end mb-1.5">
+                    <span className="text-[15px] font-bold text-white/80">{item.name}</span>
+                    <span className="text-[15px] font-black text-blue-500">{item.value} vendidos</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(item.value / topColors[0].value) * 100}%` }}
+                      className="h-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+                    />
+                  </div>
+                </div>
+              ))}
+              {topColors.length === 0 && <p className="text-[15px] text-white/20 italic">Sin datos de venta</p>}
+            </div>
+          </div>
+
+          {/* Top Sizes */}
+          <div className="bg-black p-6 rounded-3xl border border-white/5 shadow-2xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+              <Ruler className="w-24 h-24" />
+            </div>
+            <h3 className="text-[16px] font-black uppercase tracking-[0.2em] text-white/40 mb-6 flex items-center gap-2">
+              <Ruler className="w-4 h-4 text-green-500" />
+              Top Tallas
+            </h3>
+            <div className="space-y-4">
+              {topSizes.map((item, index) => (
+                <div key={item.name} className="relative">
+                  <div className="flex justify-between items-end mb-1.5">
+                    <span className="text-[15px] font-bold text-white/80">{item.name}</span>
+                    <span className="text-[15px] font-black text-green-500">{item.value} vendidos</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(item.value / topSizes[0].value) * 100}%` }}
+                      className="h-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"
+                    />
+                  </div>
+                </div>
+              ))}
+              {topSizes.length === 0 && <p className="text-[15px] text-white/20 italic">Sin datos de venta</p>}
             </div>
           </div>
         </div>

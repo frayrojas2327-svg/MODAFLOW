@@ -13,7 +13,7 @@ import {
   updateDoc,
   runTransaction
 } from '../firebase';
-import { Product, Sale, Expense, Income, AppState, UserSettings } from '../types';
+import { Product, Sale, Expense, Income, AppState, UserSettings, ChatMessage } from '../types';
 
 export enum OperationType {
   CREATE = 'create',
@@ -246,6 +246,41 @@ export const firebaseService = {
       await setDoc(doc(db, 'users', user.uid), updatedProfile, { merge: true });
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `users/${user.uid}`);
+    }
+  },
+
+  // Chat History
+  subscribeChatMessages: (callback: (messages: ChatMessage[]) => void) => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return () => {};
+    
+    const q = query(collection(db, 'chatMessages'), where('ownerUid', '==', uid));
+    return onSnapshot(q, (snapshot) => {
+      const messages = snapshot.docs
+        .map(doc => doc.data() as ChatMessage)
+        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+      callback(messages);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'chatMessages'));
+  },
+
+  addChatMessage: async (message: ChatMessage) => {
+    try {
+      await setDoc(doc(db, 'chatMessages', message.id), message);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, `chatMessages/${message.id}`);
+    }
+  },
+
+  clearChatHistory: async () => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+    try {
+      const q = query(collection(db, 'chatMessages'), where('ownerUid', '==', uid));
+      const snapshot = await getDocs(q);
+      const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
+      await Promise.all(deletePromises);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, 'chatMessages');
     }
   },
   

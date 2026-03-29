@@ -187,14 +187,14 @@ export default function Login({ onDemoLogin }: { onDemoLogin: () => void }) {
       >
         <div className="space-y-4">
           <Logo className="justify-center" />
-          <p className="text-white/40 text-sm mt-1">
+          <p className="text-white/40 text-[15px] mt-1">
             {isRegistering ? 'Crea tu cuenta' : 'Gestiona tu marca de ropa'}
           </p>
         </div>
 
         <form onSubmit={handleEmailAuth} className="space-y-4 text-left">
           <div className="space-y-1">
-            <label htmlFor="username" className="text-[10px] font-bold text-white/40 uppercase tracking-widest ml-1">Usuario</label>
+            <label htmlFor="username" className="text-[15px] font-bold text-white/40 uppercase tracking-widest ml-1">Usuario</label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20"><UserIcon className="w-4 h-4" /></span>
               <input 
@@ -205,14 +205,14 @@ export default function Login({ onDemoLogin }: { onDemoLogin: () => void }) {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-11 pr-4 focus:outline-none focus:border-orange-500/50 transition-all text-sm"
+                className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-11 pr-4 focus:outline-none focus:border-orange-500/50 transition-all text-[15px]"
                 placeholder="Tu nombre de usuario"
               />
             </div>
           </div>
 
           <div className="space-y-1">
-            <label htmlFor="password" className="text-[10px] font-bold text-white/40 uppercase tracking-widest ml-1">Contraseña</label>
+            <label htmlFor="password" className="text-[15px] font-bold text-white/40 uppercase tracking-widest ml-1">Contraseña</label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20"><Lock className="w-4 h-4" /></span>
               <input 
@@ -223,7 +223,7 @@ export default function Login({ onDemoLogin }: { onDemoLogin: () => void }) {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-11 pr-12 focus:outline-none focus:border-orange-500/50 transition-all text-sm"
+                className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-11 pr-12 focus:outline-none focus:border-orange-500/50 transition-all text-[15px]"
                 placeholder="••••••••"
               />
               <button 
@@ -250,14 +250,14 @@ export default function Login({ onDemoLogin }: { onDemoLogin: () => void }) {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <span className="text-[11px] text-white/40 group-hover:text-white/60 transition-colors">Recordar mis datos</span>
+              <span className="text-[15px] text-white/40 group-hover:text-white/60 transition-colors">Recordar mis datos</span>
             </label>
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3.5 bg-orange-500 text-black rounded-xl font-black text-sm flex items-center justify-center gap-2 hover:bg-orange-600 transition-all shadow-lg shadow-orange-500/20 disabled:opacity-50 mt-2"
+            className="w-full py-3.5 bg-orange-500 text-black rounded-xl font-black text-[15px] flex items-center justify-center gap-2 hover:bg-orange-600 transition-all shadow-lg shadow-orange-500/20 disabled:opacity-50 mt-2"
           >
             {isLoading ? (
               <div className="w-5 h-5 border-3 border-black/20 border-t-black rounded-full animate-spin" />
@@ -272,14 +272,14 @@ export default function Login({ onDemoLogin }: { onDemoLogin: () => void }) {
 
         <div className="relative flex items-center gap-4 py-2">
           <div className="flex-1 h-[1px] bg-white/5" />
-          <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">O</span>
+          <span className="text-[15px] font-bold text-white/20 uppercase tracking-widest">O</span>
           <div className="flex-1 h-[1px] bg-white/5" />
         </div>
 
         <button
           onClick={handleGoogleLogin}
           disabled={isLoading}
-          className="w-full py-3.5 bg-white text-black rounded-xl font-black text-sm flex items-center justify-center gap-3 hover:bg-white/90 transition-all shadow-lg"
+          className="w-full py-3.5 bg-white text-black rounded-xl font-black text-[15px] flex items-center justify-center gap-3 hover:bg-white/90 transition-all shadow-lg"
         >
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-4 h-4" alt="Google" />
           Continuar con Google
@@ -288,13 +288,13 @@ export default function Login({ onDemoLogin }: { onDemoLogin: () => void }) {
         <div className="pt-2">
           <button 
             onClick={toggleRegister}
-            className="text-xs text-white/40 hover:text-orange-500 transition-colors"
+            className="text-[15px] text-white/40 hover:text-orange-500 transition-colors"
           >
             {isRegistering ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate aquí'}
           </button>
         </div>
 
-        <div className="p-4 bg-orange-500/5 rounded-2xl border border-orange-500/10 text-[11px] text-white/60 leading-relaxed italic">
+        <div className="p-4 bg-orange-500/5 rounded-2xl border border-orange-500/10 text-[15px] text-white/60 leading-relaxed italic">
           <Sparkles className="w-4 h-4 text-orange-500 mx-auto mb-1.5" />
           "Tu marca merece el mejor control financiero. Únete hoy."
         </div>

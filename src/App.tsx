@@ -23,6 +23,7 @@ import Finances from './components/Finances';
 import Settings from './components/Settings';
 import Login from './components/Login';
 import Logo from './components/Logo';
+import AIAdvisor from './components/AIAdvisor';
 import { auth, signOut, onAuthStateChanged, User, db, doc, onSnapshot } from './firebase';
 import { firebaseService } from './services/firebaseService';
 import { AppState, Product, Sale, Expense, Income } from './types';
@@ -39,6 +40,7 @@ export default function App() {
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [hasShownWelcome, setHasShownWelcome] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [recentlySold, setRecentlySold] = useState<Set<string>>(new Set());
   const [data, setData] = useState<AppState>({
     products: [],
     sales: [],
@@ -247,8 +249,8 @@ export default function App() {
                   referrerPolicy="no-referrer"
                 />
                 <div className="overflow-hidden">
-                  <p className="text-xs md:text-sm font-bold truncate">{userProfile?.companyName || user.displayName || 'Mi Marca'}</p>
-                  <p className="text-[9px] md:text-[10px] text-white/40 truncate">{user.email}</p>
+                  <p className="text-[15px] md:text-[16px] font-bold truncate">{userProfile?.companyName || user.displayName || 'Mi Marca'}</p>
+                  <p className="text-[15px] md:text-[15px] text-white/40 truncate">{user.email}</p>
                 </div>
               </div>
 
@@ -261,7 +263,7 @@ export default function App() {
                       setIsSidebarOpen(false);
                     }}
                     className={cn(
-                      "w-full flex items-center gap-2.5 md:gap-3 px-3 md:px-4 py-2.5 md:py-3.5 rounded-lg md:rounded-xl transition-all duration-200 group text-sm md:text-base",
+                      "w-full flex items-center gap-2.5 md:gap-3 px-3 md:px-4 py-2.5 md:py-3.5 rounded-lg md:rounded-xl transition-all duration-200 group text-[16px] md:text-base",
                       activeView === item.id 
                         ? "bg-orange-500 text-black font-semibold shadow-[0_0_15px_rgba(249,115,22,0.2)]" 
                         : "text-white/60 hover:text-white hover:bg-white/5"
@@ -280,7 +282,7 @@ export default function App() {
                     setIsSidebarOpen(false);
                   }}
                   className={cn(
-                    "w-full flex items-center gap-2.5 md:gap-3 px-3 md:px-4 py-2 md:py-3 rounded-lg md:rounded-xl transition-all text-sm md:text-base",
+                    "w-full flex items-center gap-2.5 md:gap-3 px-3 md:px-4 py-2 md:py-3 rounded-lg md:rounded-xl transition-all text-[16px] md:text-base",
                     activeView === 'settings' 
                       ? "bg-orange-500 text-black font-semibold shadow-[0_0_15px_rgba(249,115,22,0.2)]" 
                       : "text-white/40 hover:text-white hover:bg-white/5"
@@ -291,7 +293,7 @@ export default function App() {
                 </button>
                 <button 
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-2.5 md:gap-3 px-3 md:px-4 py-2 md:py-3 rounded-lg md:rounded-xl text-red-400/60 hover:text-red-400 hover:bg-red-400/5 transition-all text-sm md:text-base"
+                  className="w-full flex items-center gap-2.5 md:gap-3 px-3 md:px-4 py-2 md:py-3 rounded-lg md:rounded-xl text-red-400/60 hover:text-red-400 hover:bg-red-400/5 transition-all text-[16px] md:text-base"
                 >
                   <LogOut className="w-4 h-4 md:w-5 md:h-5" />
                   Cerrar Sesión
@@ -311,7 +313,14 @@ export default function App() {
                 transition={{ duration: 0.2 }}
               >
                 {activeView === 'dashboard' && <Dashboard data={data} />}
-                {activeView === 'inventory' && <Inventory data={data} onUpdate={handleUpdate} />}
+                {activeView === 'inventory' && (
+                  <Inventory 
+                    data={data} 
+                    onUpdate={handleUpdate} 
+                    recentlySold={recentlySold}
+                    setRecentlySold={setRecentlySold}
+                  />
+                )}
                 {activeView === 'sales' && <Sales data={data} onUpdate={handleUpdate} />}
                 {activeView === 'incomes' && <Incomes data={data} onUpdate={handleUpdate} />}
                 {activeView === 'expenses' && <Expenses data={data} onUpdate={handleUpdate} />}
@@ -329,6 +338,9 @@ export default function App() {
             onClick={() => setIsSidebarOpen(false)}
           />
         )}
+
+        {/* AI Advisor */}
+        <AIAdvisor data={data} />
       </div>
     </ErrorBoundary>
   );

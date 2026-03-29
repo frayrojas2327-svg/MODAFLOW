@@ -108,7 +108,7 @@ export default function Dashboard({ data }: DashboardProps) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Panel de Control</h1>
-          <p className="text-white/50 text-xs md:text-sm mt-0.5 md:mt-1">Bienvenido de nuevo. Aquí está el resumen de tu negocio.</p>
+          <p className="text-white/50 text-[15px] md:text-[16px] mt-0.5 md:mt-1">Bienvenido de nuevo. Aquí está el resumen de tu negocio.</p>
         </div>
         
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
@@ -118,7 +118,7 @@ export default function Dashboard({ data }: DashboardProps) {
                 key={range}
                 onClick={() => handleRangeChange(range)}
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-bold transition-all uppercase",
+                  "px-3 py-1.5 rounded-lg text-[15px] md:text-[15px] font-bold transition-all uppercase",
                   timeRange === range ? "bg-orange-500 text-black" : "text-white/40 hover:text-white"
                 )}
               >
@@ -128,7 +128,7 @@ export default function Dashboard({ data }: DashboardProps) {
             <button 
               onClick={() => setTimeRange('custom')}
               className={cn(
-                "px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-bold transition-all uppercase",
+                "px-3 py-1.5 rounded-lg text-[15px] md:text-[15px] font-bold transition-all uppercase",
                 timeRange === 'custom' ? "bg-orange-500 text-black" : "text-white/40 hover:text-white"
               )}
             >
@@ -137,7 +137,7 @@ export default function Dashboard({ data }: DashboardProps) {
           </div>
           
           <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-xl border border-white/10">
-            <Calendar className="w-5 h-5 text-orange-500" />
+            <Calendar className="w-6 h-6 text-orange-500" />
             <div className="flex items-center gap-1">
               <input 
                 type="date" 
@@ -149,7 +149,7 @@ export default function Dashboard({ data }: DashboardProps) {
                     setTimeRange('custom');
                   }
                 }}
-                className="bg-transparent text-[10px] md:text-xs font-medium focus:outline-none text-white/60 hover:text-white transition-colors"
+                className="bg-transparent text-[15px] md:text-[15px] font-medium focus:outline-none text-white/60 hover:text-white transition-colors"
               />
               <span className="text-white/20">-</span>
               <input 
@@ -162,7 +162,7 @@ export default function Dashboard({ data }: DashboardProps) {
                     setTimeRange('custom');
                   }
                 }}
-                className="bg-transparent text-[10px] md:text-xs font-medium focus:outline-none text-white/60 hover:text-white transition-colors"
+                className="bg-transparent text-[15px] md:text-[15px] font-medium focus:outline-none text-white/60 hover:text-white transition-colors"
               />
             </div>
           </div>
@@ -206,7 +206,7 @@ export default function Dashboard({ data }: DashboardProps) {
         <div className="lg:col-span-2 bg-black p-4 md:p-6 rounded-2xl border border-white/5 shadow-xl">
           <div className="flex items-center justify-between mb-4 md:mb-8">
             <h3 className="text-base md:text-lg font-semibold">Rendimiento {timeRange === '7d' ? 'Semanal' : 'del Periodo'}</h3>
-            <div className="flex items-center gap-3 md:gap-4 text-[10px] md:text-xs">
+            <div className="flex items-center gap-3 md:gap-4 text-[15px] md:text-[15px]">
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-3 rounded-full bg-orange-500"></div>
                 <span className="text-white/60">Ventas</span>
@@ -231,13 +231,13 @@ export default function Dashboard({ data }: DashboardProps) {
                   dataKey="name" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: '#ffffff40', fontSize: 12 }}
+                  tick={{ fill: '#ffffff40', fontSize: 15 }}
                   dy={10}
                 />
                 <YAxis 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: '#ffffff40', fontSize: 12 }}
+                  tick={{ fill: '#ffffff40', fontSize: 15 }}
                   tickFormatter={(value) => `S/${value}`}
                 />
                 <Tooltip 
@@ -276,7 +276,7 @@ export default function Dashboard({ data }: DashboardProps) {
                   type="category" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: '#ffffff60', fontSize: 11 }}
+                  tick={{ fill: '#ffffff60', fontSize: 15 }}
                   width={80}
                 />
                 <Tooltip 
@@ -302,7 +302,7 @@ export default function Dashboard({ data }: DashboardProps) {
               <AlertTriangle className="w-4 h-4 md:w-5 h-5 text-orange-500" />
               Alertas de Stock Bajo
             </h3>
-            <span className="text-[10px] md:text-xs text-white/40">{lowStockProducts.length} productos</span>
+            <span className="text-[15px] md:text-[15px] text-white/40">{lowStockProducts.length} productos</span>
           </div>
           <div className="space-y-3 md:space-y-4">
             {lowStockProducts.length > 0 ? (
@@ -313,13 +313,13 @@ export default function Dashboard({ data }: DashboardProps) {
                       <Package className="w-5 h-5 text-orange-500" />
                     </div>
                     <div>
-                      <p className="font-medium text-sm">{product.name}</p>
-                      <p className="text-xs text-white/40">{product.category}</p>
+                      <p className="font-medium text-[16px]">{product.name}</p>
+                      <p className="text-[15px] text-white/40">{product.category}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs font-bold text-orange-500">Stock Crítico</p>
-                    <p className="text-xs text-white/40">
+                    <p className="text-[15px] font-bold text-orange-500">Stock Crítico</p>
+                    <p className="text-[15px] text-white/40">
                       {product.variants.reduce((acc, v) => acc + v.stock, 0)} unidades
                     </p>
                   </div>
@@ -343,18 +343,18 @@ export default function Dashboard({ data }: DashboardProps) {
                     {sale.size}
                   </div>
                   <div>
-                    <p className="font-medium text-sm">{sale.productName}</p>
-                    <div className="flex items-center gap-1.5 text-xs text-white/40">
+                    <p className="font-medium text-[16px]">{sale.productName}</p>
+                    <div className="flex items-center gap-1.5 text-[15px] text-white/40">
                       <span>{format(new Date(sale.date), 'HH:mm')}</span>
-                      <Calendar className="w-3.5 h-3.5 text-orange-500" />
+                      <Calendar className="w-4 h-4 text-orange-500" />
                       <span>•</span>
                       <span>{sale.paymentMethod}</span>
                     </div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-sm">{formatCurrency(sale.total)}</p>
-                  <p className="text-xs text-green-500">Completada</p>
+                  <p className="font-bold text-[16px]">{formatCurrency(sale.total)}</p>
+                  <p className="text-[15px] text-green-500">Completada</p>
                 </div>
               </div>
             ))}
@@ -384,11 +384,11 @@ function StatCard({ title, value, icon: Icon, trend, color }: any) {
         <div className={cn("p-2 md:p-2.5 rounded-xl", colorClasses[color])}>
           <Icon className="w-4 h-4 md:w-5 h-5" />
         </div>
-        <span className={cn("text-[10px] md:text-xs font-bold px-2 py-0.5 md:py-1 rounded-full", colorClasses[color])}>
+        <span className={cn("text-[15px] md:text-[15px] font-bold px-2 py-0.5 md:py-1 rounded-full", colorClasses[color])}>
           {trend}
         </span>
       </div>
-      <p className="text-white/40 text-xs md:text-sm font-medium">{title}</p>
+      <p className="text-white/40 text-[15px] md:text-[16px] font-medium">{title}</p>
       <h4 className="text-xl md:text-2xl font-bold mt-0.5 md:mt-1 group-hover:text-orange-500 transition-colors">{value}</h4>
     </div>
   );

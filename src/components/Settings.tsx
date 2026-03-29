@@ -10,7 +10,8 @@ import {
   TrendingUp,
   X,
   AlertTriangle,
-  RefreshCcw
+  RefreshCcw,
+  Sparkles
 } from 'lucide-react';
 import { AppState, UserSettings } from '../types';
 import { firebaseService } from '../services/firebaseService';
@@ -31,6 +32,8 @@ export default function Settings({ data, userProfile, onUpdate }: SettingsProps)
   const [newProductCat, setNewProductCat] = useState('');
   const [newExpenseCat, setNewExpenseCat] = useState('');
   const [newIncomeCat, setNewIncomeCat] = useState('');
+  const [geminiApiKey, setGeminiApiKey] = useState(data.settings.geminiApiKey || '');
+  const [openaiApiKey, setOpenaiApiKey] = useState(data.settings.openaiApiKey || '');
   const [isSaving, setIsSaving] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -59,6 +62,15 @@ export default function Settings({ data, userProfile, onUpdate }: SettingsProps)
       setIncomeCategories(data.settings.incomeCategories);
     }
   }, [data.settings.incomeCategories]);
+
+  useEffect(() => {
+    if (data.settings.geminiApiKey) {
+      setGeminiApiKey(data.settings.geminiApiKey);
+    }
+    if (data.settings.openaiApiKey) {
+      setOpenaiApiKey(data.settings.openaiApiKey);
+    }
+  }, [data.settings.geminiApiKey, data.settings.openaiApiKey]);
 
   const handleAddProductCat = () => {
     if (newProductCat.trim() && !productCategories.includes(newProductCat.trim())) {
@@ -106,7 +118,9 @@ export default function Settings({ data, userProfile, onUpdate }: SettingsProps)
       await firebaseService.updateSettings({
         productCategories,
         expenseCategories,
-        incomeCategories
+        incomeCategories,
+        geminiApiKey: geminiApiKey.trim(),
+        openaiApiKey: openaiApiKey.trim()
       });
 
       toast.success('Configuración guardada correctamente');
@@ -142,12 +156,12 @@ export default function Settings({ data, userProfile, onUpdate }: SettingsProps)
             <SettingsIcon className="w-6 h-6 md:w-8 md:h-8 text-orange-500" />
             Configuración
           </h1>
-          <p className="text-white/50 mt-0.5 text-xs md:text-sm">Personaliza tu marca y categorías de negocio.</p>
+          <p className="text-white/50 mt-0.5 text-[15px] md:text-[16px]">Personaliza tu marca y categorías de negocio.</p>
         </div>
         <button 
           onClick={handleSave}
           disabled={isSaving}
-          className="flex items-center gap-2 px-6 py-2.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-black rounded-xl transition-all font-bold shadow-[0_0_20px_rgba(249,115,22,0.3)] text-sm md:text-base"
+          className="flex items-center gap-2 px-6 py-2.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-black rounded-xl transition-all font-bold shadow-[0_0_20px_rgba(249,115,22,0.3)] text-[15px] md:text-[16px]"
         >
           <Save className="w-4 h-4 md:w-5 md:h-5" />
           {isSaving ? 'Guardando...' : 'Guardar Todo'}
@@ -159,15 +173,15 @@ export default function Settings({ data, userProfile, onUpdate }: SettingsProps)
         <section className="bg-black p-6 rounded-2xl border border-white/5 shadow-xl space-y-4">
           <div className="flex items-center gap-2 text-orange-500 mb-2">
             <Building2 className="w-5 h-5" />
-            <h2 className="font-bold uppercase tracking-wider text-xs">Información de Marca</h2>
+            <h2 className="font-bold uppercase tracking-wider text-[15px]">Información de Marca</h2>
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-white/40 uppercase tracking-wider">Nombre de tu Emprendimiento</label>
+            <label className="text-[15px] font-bold text-white/40 uppercase tracking-wider">Nombre de tu Emprendimiento</label>
             <input 
               type="text" 
               value={companyName}
               onChange={e => setCompanyName(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:border-orange-500/50 text-sm"
+              className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:border-orange-500/50 text-[15px]"
               placeholder="Ej: ModaFlow Store"
             />
           </div>
@@ -177,7 +191,7 @@ export default function Settings({ data, userProfile, onUpdate }: SettingsProps)
         <section className="bg-black p-6 rounded-2xl border border-white/5 shadow-xl space-y-4">
           <div className="flex items-center gap-2 text-orange-500 mb-2">
             <Package className="w-5 h-5" />
-            <h2 className="font-bold uppercase tracking-wider text-xs">Categorías de Productos</h2>
+            <h2 className="font-bold uppercase tracking-wider text-[15px]">Categorías de Productos</h2>
           </div>
           <div className="flex gap-2">
             <input 
@@ -185,7 +199,7 @@ export default function Settings({ data, userProfile, onUpdate }: SettingsProps)
               value={newProductCat}
               onChange={e => setNewProductCat(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleAddProductCat()}
-              className="flex-1 bg-white/5 border border-white/10 rounded-xl py-2 px-3 focus:outline-none focus:border-orange-500/50 text-sm"
+              className="flex-1 bg-white/5 border border-white/10 rounded-xl py-2 px-3 focus:outline-none focus:border-orange-500/50 text-[15px]"
               placeholder="Nueva categoría..."
             />
             <button 
@@ -198,7 +212,7 @@ export default function Settings({ data, userProfile, onUpdate }: SettingsProps)
           <div className="flex flex-wrap gap-2">
             {productCategories.map(cat => (
               <div key={cat} className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-full group">
-                <span className="text-xs">{cat}</span>
+                <span className="text-[15px]">{cat}</span>
                 <button 
                   onClick={() => handleRemoveProductCat(cat)}
                   className="text-white/20 hover:text-red-500 transition-colors"
@@ -214,7 +228,7 @@ export default function Settings({ data, userProfile, onUpdate }: SettingsProps)
         <section className="bg-black p-6 rounded-2xl border border-white/5 shadow-xl space-y-4">
           <div className="flex items-center gap-2 text-orange-500 mb-2">
             <TrendingDown className="w-5 h-5" />
-            <h2 className="font-bold uppercase tracking-wider text-xs">Categorías de Gastos</h2>
+            <h2 className="font-bold uppercase tracking-wider text-[15px]">Categorías de Gastos</h2>
           </div>
           <div className="flex gap-2">
             <input 
@@ -222,7 +236,7 @@ export default function Settings({ data, userProfile, onUpdate }: SettingsProps)
               value={newExpenseCat}
               onChange={e => setNewExpenseCat(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleAddExpenseCat()}
-              className="flex-1 bg-white/5 border border-white/10 rounded-xl py-2 px-3 focus:outline-none focus:border-orange-500/50 text-sm"
+              className="flex-1 bg-white/5 border border-white/10 rounded-xl py-2 px-3 focus:outline-none focus:border-orange-500/50 text-[15px]"
               placeholder="Nueva categoría..."
             />
             <button 
@@ -235,7 +249,7 @@ export default function Settings({ data, userProfile, onUpdate }: SettingsProps)
           <div className="flex flex-wrap gap-2">
             {expenseCategories.map(cat => (
               <div key={cat} className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-full group">
-                <span className="text-xs">{cat}</span>
+                <span className="text-[15px]">{cat}</span>
                 <button 
                   onClick={() => handleRemoveExpenseCat(cat)}
                   className="text-white/20 hover:text-red-500 transition-colors"
@@ -251,7 +265,7 @@ export default function Settings({ data, userProfile, onUpdate }: SettingsProps)
         <section className="bg-black p-6 rounded-2xl border border-white/5 shadow-xl space-y-4">
           <div className="flex items-center gap-2 text-green-500 mb-2">
             <TrendingUp className="w-5 h-5" />
-            <h2 className="font-bold uppercase tracking-wider text-xs">Categorías de Ingresos</h2>
+            <h2 className="font-bold uppercase tracking-wider text-[15px]">Categorías de Ingresos</h2>
           </div>
           <div className="flex gap-2">
             <input 
@@ -259,7 +273,7 @@ export default function Settings({ data, userProfile, onUpdate }: SettingsProps)
               value={newIncomeCat}
               onChange={e => setNewIncomeCat(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleAddIncomeCat()}
-              className="flex-1 bg-white/5 border border-white/10 rounded-xl py-2 px-3 focus:outline-none focus:border-green-500/50 text-sm"
+              className="flex-1 bg-white/5 border border-white/10 rounded-xl py-2 px-3 focus:outline-none focus:border-green-500/50 text-[15px]"
               placeholder="Nueva categoría..."
             />
             <button 
@@ -272,7 +286,7 @@ export default function Settings({ data, userProfile, onUpdate }: SettingsProps)
           <div className="flex flex-wrap gap-2">
             {incomeCategories.map(cat => (
               <div key={cat} className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-full group">
-                <span className="text-xs">{cat}</span>
+                <span className="text-[15px]">{cat}</span>
                 <button 
                   onClick={() => handleRemoveIncomeCat(cat)}
                   className="text-white/20 hover:text-red-500 transition-colors"
@@ -284,24 +298,70 @@ export default function Settings({ data, userProfile, onUpdate }: SettingsProps)
           </div>
         </section>
       </div>
+      
+      {/* AI Configuration */}
+      <section className="bg-black p-6 rounded-2xl border border-white/5 shadow-xl space-y-6">
+        <div className="flex items-center gap-2 text-orange-500">
+          <Sparkles className="w-5 h-5" />
+          <h2 className="font-bold uppercase tracking-wider text-[15px]">Configuración de IA</h2>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <label className="text-[15px] font-bold text-white/40 uppercase tracking-wider flex items-center gap-2">
+              Google Gemini API Key
+              <span className="text-[10px] bg-orange-500/10 text-orange-500 px-2 py-0.5 rounded-full">Recomendado</span>
+            </label>
+            <input 
+              type="password" 
+              value={geminiApiKey}
+              onChange={e => setGeminiApiKey(e.target.value)}
+              className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:border-orange-500/50 text-[15px]"
+              placeholder="AIzaSy..."
+            />
+            <p className="text-[12px] text-white/30">Obtenla en <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-orange-500/60 hover:text-orange-500 underline">Google AI Studio</a></p>
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-[15px] font-bold text-white/40 uppercase tracking-wider flex items-center gap-2">
+              OpenAI ChatGPT API Key
+              <span className="text-[10px] bg-white/10 text-white/40 px-2 py-0.5 rounded-full">Opcional</span>
+            </label>
+            <input 
+              type="password" 
+              value={openaiApiKey}
+              onChange={e => setOpenaiApiKey(e.target.value)}
+              className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:border-orange-500/50 text-[15px]"
+              placeholder="sk-..."
+            />
+            <p className="text-[12px] text-white/30">Obtenla en <a href="https://platform.openai.com/api-keys" target="_blank" rel="noreferrer" className="text-orange-500/60 hover:text-orange-500 underline">OpenAI Platform</a></p>
+          </div>
+        </div>
+        
+        <div className="p-4 bg-orange-500/5 rounded-xl border border-orange-500/10">
+          <p className="text-[13px] text-white/60 leading-relaxed">
+            <span className="text-orange-500 font-bold">Nota:</span> Estas llaves se guardan de forma segura en tu perfil. La IA las usará para darte consejos personalizados sobre tu negocio. Si no las proporcionas, el sistema usará una llave predeterminada con límites de uso.
+          </p>
+        </div>
+      </section>
 
       {/* Danger Zone */}
       <section className="bg-black p-6 rounded-2xl border border-red-500/10 shadow-xl space-y-6">
         <div className="flex items-center gap-2 text-red-500">
           <AlertTriangle className="w-5 h-5" />
-          <h2 className="font-bold uppercase tracking-wider text-xs">Zona de Peligro</h2>
+          <h2 className="font-bold uppercase tracking-wider text-[15px]">Zona de Peligro</h2>
         </div>
         
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-red-500/5 rounded-xl border border-red-500/10">
           <div>
-            <h3 className="font-bold text-sm">Reiniciar todos los datos</h3>
-            <p className="text-xs text-white/40 mt-1">
+            <h3 className="font-bold text-[15px]">Reiniciar todos los datos</h3>
+            <p className="text-[15px] text-white/40 mt-1">
               Esta acción eliminará todos tus productos, ventas, gastos e ingresos de forma permanente.
             </p>
           </div>
           <button 
             onClick={() => setShowResetConfirm(true)}
-            className="flex items-center justify-center gap-2 px-6 py-2.5 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-black rounded-xl transition-all font-bold text-sm"
+            className="flex items-center justify-center gap-2 px-6 py-2.5 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-black rounded-xl transition-all font-bold text-[15px]"
           >
             <RefreshCcw className="w-4 h-4" />
             Reiniciar a Cero
@@ -331,7 +391,7 @@ export default function Settings({ data, userProfile, onUpdate }: SettingsProps)
               </div>
               <div>
                 <h2 className="text-2xl font-bold">¿Estás absolutamente seguro?</h2>
-                <p className="text-white/40 mt-2">
+                <p className="text-[15px] text-white/40 mt-2">
                   Esta acción es irreversible. Se borrarán todos tus registros de inventario y finanzas.
                 </p>
               </div>
@@ -353,7 +413,7 @@ export default function Settings({ data, userProfile, onUpdate }: SettingsProps)
                 <button 
                   onClick={() => setShowResetConfirm(false)}
                   disabled={isResetting}
-                  className="w-full py-4 bg-white/5 hover:bg-white/10 rounded-2xl font-bold transition-all"
+                  className="w-full py-4 bg-white/5 hover:bg-white/10 rounded-2xl text-[15px] font-bold transition-all"
                 >
                   Cancelar
                 </button>

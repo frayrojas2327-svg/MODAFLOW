@@ -46,6 +46,7 @@
         "discount": { "type": "number" },
         "total": { "type": "number" },
         "paymentMethod": { "type": "string" },
+        "notes": { "type": "string", "description": "Additional notes for the sale." },
         "date": { "type": "string", "format": "date-time" },
         "ownerUid": { "type": "string" }
       },
@@ -64,6 +65,19 @@
         "ownerUid": { "type": "string" }
       },
       "required": ["id", "description", "amount", "ownerUid"]
+    },
+    "ChatMessage": {
+      "title": "Chat Message",
+      "description": "A message in the AI Advisor chat history.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "assistant"] },
+        "content": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "ownerUid": { "type": "string" }
+      },
+      "required": ["id", "role", "content", "timestamp", "ownerUid"]
     }
   },
   "firestore": {
@@ -82,6 +96,10 @@
     "/expenses/{expenseId}": {
       "schema": "Expense",
       "description": "Expense records."
+    },
+    "/chatMessages/{messageId}": {
+      "schema": "ChatMessage",
+      "description": "AI Advisor chat history."
     }
   }
 }

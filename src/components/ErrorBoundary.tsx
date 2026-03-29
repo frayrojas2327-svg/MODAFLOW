@@ -56,7 +56,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
             </div>
             <div className="space-y-2">
               <h2 className="text-2xl font-bold text-white">¡Ups! Algo salió mal</h2>
-              <p className="text-white/40 text-sm leading-relaxed">
+              <p className="text-white/40 text-[15px] leading-relaxed">
                 {errorMessage}
               </p>
             </div>

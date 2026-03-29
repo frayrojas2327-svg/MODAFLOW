@@ -20,7 +20,7 @@ export default function Logo({ className, iconClassName, showText = true }: Logo
       {showText && (
         <div className="flex flex-col">
           <span className="text-xl font-black tracking-tighter text-white leading-none">MODAFLOW</span>
-          <span className="text-[9px] font-bold text-orange-500 uppercase tracking-[0.2em] mt-1">Business Control</span>
+          <span className="text-[15px] font-bold text-orange-500 uppercase tracking-[0.2em] mt-1">Business Control</span>
         </div>
       )}
     </div>

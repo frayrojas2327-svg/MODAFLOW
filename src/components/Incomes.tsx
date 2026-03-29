@@ -72,19 +72,19 @@ export default function Incomes({ data, onUpdate }: IncomesProps) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
         <div>
           <h1 className="text-xl md:text-3xl font-bold tracking-tight">Otros Ingresos</h1>
-          <p className="text-white/50 mt-0.5 text-xs md:text-sm">Registra entradas de dinero adicionales a tus ventas.</p>
+          <p className="text-white/50 mt-0.5 text-[15px] md:text-[16px]">Registra entradas de dinero adicionales a tus ventas.</p>
         </div>
         <div className="flex items-center gap-2 md:gap-3">
           <button 
             onClick={() => setIsCategoryModalOpen(true)}
-            className="flex items-center gap-2 px-3 md:px-4 py-2 md:py-2.5 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-all text-xs md:text-sm font-medium"
+            className="flex items-center gap-2 px-3 md:px-4 py-2 md:py-2.5 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-all text-[15px] md:text-[16px] font-medium"
           >
             <Filter className="w-3.5 h-3.5 md:w-4 md:h-4" />
             <span className="hidden xs:inline">Categorías</span>
           </button>
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center justify-center gap-2 px-4 md:px-6 py-2 md:py-2.5 bg-green-500 hover:bg-green-600 text-black rounded-lg md:rounded-xl transition-all font-bold shadow-[0_0_20px_rgba(34,197,94,0.3)] text-sm md:text-base"
+            className="flex items-center justify-center gap-2 px-4 md:px-6 py-2 md:py-2.5 bg-green-500 hover:bg-green-600 text-black rounded-lg md:rounded-xl transition-all font-bold shadow-[0_0_20px_rgba(34,197,94,0.3)] text-[15px] md:text-[16px]"
           >
             <Plus className="w-4 h-4 md:w-5 md:h-5" />
             Registrar Ingreso
@@ -94,15 +94,15 @@ export default function Incomes({ data, onUpdate }: IncomesProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6">
         <div className="bg-black p-4 md:p-6 rounded-xl md:rounded-2xl border border-white/5 shadow-xl">
-          <p className="text-white/40 text-[10px] md:text-sm font-medium uppercase tracking-wider">Total Ingresos Extra</p>
+          <p className="text-white/40 text-[15px] md:text-[16px] font-medium uppercase tracking-wider">Total Ingresos Extra</p>
           <h4 className="text-xl md:text-2xl font-bold mt-0.5 text-green-500">{formatCurrency(totalIncomes)}</h4>
         </div>
         <div className="bg-black p-4 md:p-6 rounded-xl md:rounded-2xl border border-white/5 shadow-xl">
-          <p className="text-white/40 text-[10px] md:text-sm font-medium uppercase tracking-wider">Ingresos este mes</p>
+          <p className="text-white/40 text-[15px] md:text-[16px] font-medium uppercase tracking-wider">Ingresos este mes</p>
           <h4 className="text-xl md:text-2xl font-bold mt-0.5">{formatCurrency(totalIncomes)}</h4>
         </div>
         <div className="bg-black p-4 md:p-6 rounded-xl md:rounded-2xl border border-white/5 shadow-xl">
-          <p className="text-white/40 text-[10px] md:text-sm font-medium uppercase tracking-wider">Nro. de Operaciones</p>
+          <p className="text-white/40 text-[15px] md:text-[16px] font-medium uppercase tracking-wider">Nro. de Operaciones</p>
           <h4 className="text-xl md:text-2xl font-bold mt-0.5">{filteredIncomes.length}</h4>
         </div>
       </div>
@@ -114,7 +114,7 @@ export default function Incomes({ data, onUpdate }: IncomesProps) {
               key={range}
               onClick={() => handleRangeChange(range)}
               className={cn(
-                "px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-bold transition-all uppercase whitespace-nowrap",
+                "px-3 py-1.5 rounded-lg text-[15px] md:text-[15px] font-bold transition-all uppercase whitespace-nowrap",
                 timeRange === range ? "bg-green-500 text-black" : "text-white/40 hover:text-white"
               )}
             >
@@ -124,7 +124,7 @@ export default function Incomes({ data, onUpdate }: IncomesProps) {
           <button 
             onClick={() => setTimeRange('custom')}
             className={cn(
-              "px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-bold transition-all uppercase whitespace-nowrap",
+              "px-3 py-1.5 rounded-lg text-[15px] md:text-[15px] font-bold transition-all uppercase whitespace-nowrap",
               timeRange === 'custom' ? "bg-green-500 text-black" : "text-white/40 hover:text-white"
             )}
           >
@@ -145,7 +145,7 @@ export default function Incomes({ data, onUpdate }: IncomesProps) {
                   setTimeRange('custom');
                 }
               }}
-              className="bg-transparent text-[10px] md:text-xs font-medium focus:outline-none text-white/60 hover:text-white transition-colors"
+              className="bg-transparent text-[15px] md:text-[15px] font-medium focus:outline-none text-white/60 hover:text-white transition-colors"
             />
             <span className="text-white/20">-</span>
             <input 
@@ -158,7 +158,7 @@ export default function Incomes({ data, onUpdate }: IncomesProps) {
                   setTimeRange('custom');
                 }
               }}
-              className="bg-transparent text-[10px] md:text-xs font-medium focus:outline-none text-white/60 hover:text-white transition-colors"
+              className="bg-transparent text-[15px] md:text-[15px] font-medium focus:outline-none text-white/60 hover:text-white transition-colors"
             />
           </div>
         </div>
@@ -172,7 +172,7 @@ export default function Incomes({ data, onUpdate }: IncomesProps) {
             placeholder="Buscar ingreso..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-black border border-white/5 rounded-xl py-2 md:py-3 pl-11 md:pl-12 pr-4 focus:outline-none focus:border-green-500/50 transition-colors text-sm md:text-base"
+            className="w-full bg-black border border-white/5 rounded-xl py-2 md:py-3 pl-11 md:pl-12 pr-4 focus:outline-none focus:border-green-500/50 transition-colors text-[15px] md:text-[16px]"
           />
         </div>
         <div className="flex items-center gap-2 bg-black border border-white/5 rounded-xl px-4 py-2 md:py-3 relative">
@@ -180,7 +180,7 @@ export default function Incomes({ data, onUpdate }: IncomesProps) {
           <select 
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="bg-black text-sm md:text-base focus:outline-none text-white/60 hover:text-white transition-colors appearance-none pr-8 text-white"
+            className="bg-black text-[15px] md:text-[16px] focus:outline-none text-white/60 hover:text-white transition-colors appearance-none pr-8 text-white"
           >
             <option value="Todas" className="bg-black text-white">Todas las categorías</option>
             {incomeCategories.map(cat => (
@@ -196,19 +196,19 @@ export default function Incomes({ data, onUpdate }: IncomesProps) {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-white/5 bg-white/[0.02]">
-                <th className="px-4 md:px-6 py-3 md:py-4 text-[10px] md:text-xs font-bold text-white/40 uppercase tracking-wider">Descripción</th>
-                <th className="hidden md:table-cell px-6 py-4 text-xs font-bold text-white/40 uppercase tracking-wider">Categoría</th>
-                <th className="hidden md:table-cell px-6 py-4 text-xs font-bold text-white/40 uppercase tracking-wider">Fecha</th>
-                <th className="px-4 md:px-6 py-3 md:py-4 text-[10px] md:text-xs font-bold text-white/40 uppercase tracking-wider">Monto</th>
-                <th className="px-4 md:px-6 py-3 md:py-4 text-[10px] md:text-xs font-bold text-white/40 uppercase tracking-wider text-right">Acciones</th>
+                <th className="px-4 md:px-6 py-3 md:py-4 text-[15px] md:text-[15px] font-bold text-white/40 uppercase tracking-wider">Descripción</th>
+                <th className="hidden md:table-cell px-6 py-4 text-[15px] font-bold text-white/40 uppercase tracking-wider">Categoría</th>
+                <th className="hidden md:table-cell px-6 py-4 text-[15px] font-bold text-white/40 uppercase tracking-wider">Fecha</th>
+                <th className="px-4 md:px-6 py-3 md:py-4 text-[15px] md:text-[15px] font-bold text-white/40 uppercase tracking-wider">Monto</th>
+                <th className="px-4 md:px-6 py-3 md:py-4 text-[15px] md:text-[15px] font-bold text-white/40 uppercase tracking-wider text-right">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {filteredIncomes.map((income) => (
                 <tr key={income.id} className="hover:bg-white/[0.02] transition-colors group">
                   <td className="px-4 md:px-6 py-3 md:py-4">
-                    <p className="font-semibold text-xs md:text-sm">{income.description}</p>
-                    <div className="md:hidden flex items-center gap-2 mt-0.5 text-[10px] text-white/40">
+                    <p className="font-semibold text-[15px] md:text-[16px]">{income.description}</p>
+                    <div className="md:hidden flex items-center gap-2 mt-0.5 text-[15px] text-white/40">
                       <span>{income.category}</span>
                       <span>•</span>
                       <div className="flex items-center gap-1">
@@ -220,17 +220,17 @@ export default function Incomes({ data, onUpdate }: IncomesProps) {
                   <td className="hidden md:table-cell px-6 py-4">
                     <div className="flex items-center gap-2">
                       <Tag className="w-3 h-3 text-white/40" />
-                      <span className="text-xs text-white/60">{income.category}</span>
+                      <span className="text-[15px] text-white/60">{income.category}</span>
                     </div>
                   </td>
                   <td className="hidden md:table-cell px-6 py-4">
-                    <div className="flex items-center gap-2 text-white/40 text-xs">
+                    <div className="flex items-center gap-2 text-white/40 text-[15px]">
                       {format(new Date(income.date), 'dd MMM, yyyy', { locale: es })}
-                      <Calendar className="w-5 h-5 text-orange-500" />
+                      <Calendar className="w-6 h-6 text-orange-500" />
                     </div>
                   </td>
                   <td className="px-4 md:px-6 py-3 md:py-4">
-                    <p className="font-bold text-xs md:text-sm text-green-400">{formatCurrency(income.amount)}</p>
+                    <p className="font-bold text-[15px] md:text-[16px] text-green-400">{formatCurrency(income.amount)}</p>
                   </td>
                   <td className="px-4 md:px-6 py-3 md:py-4 text-right">
                     <button 
@@ -342,7 +342,7 @@ function CategoryManagementModal({
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleAdd()}
-              className="flex-1 bg-black border border-white/10 rounded-xl py-2.5 px-4 focus:outline-none focus:border-orange-500/50 text-sm"
+              className="flex-1 bg-black border border-white/10 rounded-xl py-2.5 px-4 focus:outline-none focus:border-orange-500/50 text-[15px]"
               placeholder="Nueva categoría..."
             />
             <button 
@@ -356,7 +356,7 @@ function CategoryManagementModal({
           <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
             {newCats.map(cat => (
               <div key={cat} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
-                <span className="text-sm font-medium">{cat}</span>
+                <span className="text-[15px] font-medium">{cat}</span>
                 <button 
                   onClick={() => handleRemove(cat)}
                   className="p-1 text-white/20 hover:text-red-500 transition-colors"
@@ -424,25 +424,25 @@ function IncomeModal({ categories, onClose, onSave }: { categories: string[], on
 
         <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-4 md:space-y-6">
           <div className="space-y-1.5 md:space-y-2">
-            <label className="text-[10px] md:text-xs font-bold text-white/40 uppercase tracking-wider">Descripción</label>
+            <label className="text-[15px] md:text-[15px] font-bold text-white/40 uppercase tracking-wider">Descripción</label>
             <input 
               required
               type="text" 
               value={formData.description}
               onChange={e => setFormData({ ...formData, description: e.target.value })}
-              className="w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl py-2.5 md:py-3 px-3 md:px-4 focus:outline-none focus:border-green-500/50 text-sm md:text-base"
+              className="w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl py-2.5 md:py-3 px-3 md:px-4 focus:outline-none focus:border-green-500/50 text-[15px] md:text-[16px]"
               placeholder="Ej: Inversión inicial"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3 md:gap-4">
             <div className="space-y-1.5 md:space-y-2">
-              <label className="text-[10px] md:text-xs font-bold text-white/40 uppercase tracking-wider">Categoría</label>
+              <label className="text-[15px] md:text-[15px] font-bold text-white/40 uppercase tracking-wider">Categoría</label>
               <div className="relative">
                 <select 
                   value={formData.category}
                   onChange={e => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full bg-black border border-white/10 rounded-lg md:rounded-xl py-2.5 md:py-3 px-3 md:px-4 focus:outline-none focus:border-green-500/50 appearance-none text-sm md:text-base text-white"
+                  className="w-full bg-black border border-white/10 rounded-lg md:rounded-xl py-2.5 md:py-3 px-3 md:px-4 focus:outline-none focus:border-green-500/50 appearance-none text-[15px] md:text-[16px] text-white"
                 >
                   {categories.map(cat => (
                     <option key={cat} value={cat} className="bg-black text-white">{cat}</option>
@@ -452,26 +452,26 @@ function IncomeModal({ categories, onClose, onSave }: { categories: string[], on
               </div>
             </div>
             <div className="space-y-1.5 md:space-y-2">
-              <label className="text-[10px] md:text-xs font-bold text-white/40 uppercase tracking-wider">Monto</label>
+              <label className="text-[15px] md:text-[15px] font-bold text-white/40 uppercase tracking-wider">Monto</label>
               <input 
                 required
                 type="number" 
                 value={formData.amount === 0 ? '' : formData.amount}
                 onChange={e => setFormData({ ...formData, amount: e.target.value === '' ? 0 : Number(e.target.value) })}
                 onFocus={e => e.target.select()}
-                className="w-full bg-black border border-white/10 rounded-lg md:rounded-xl py-2.5 md:py-3 px-3 md:px-4 focus:outline-none focus:border-green-500/50 text-sm md:text-base"
+                className="w-full bg-black border border-white/10 rounded-lg md:rounded-xl py-2.5 md:py-3 px-3 md:px-4 focus:outline-none focus:border-green-500/50 text-[15px] md:text-[16px]"
               />
             </div>
           </div>
 
           <div className="space-y-1.5 md:space-y-2">
-            <label className="text-[10px] md:text-xs font-bold text-white/40 uppercase tracking-wider">Fecha</label>
+            <label className="text-[15px] md:text-[15px] font-bold text-white/40 uppercase tracking-wider">Fecha</label>
             <input 
               required
               type="date" 
               value={formData.date}
               onChange={e => setFormData({ ...formData, date: e.target.value })}
-              className="w-full bg-black border border-white/10 rounded-lg md:rounded-xl py-2.5 md:py-3 px-3 md:px-4 focus:outline-none focus:border-green-500/50 text-sm md:text-base"
+              className="w-full bg-black border border-white/10 rounded-lg md:rounded-xl py-2.5 md:py-3 px-3 md:px-4 focus:outline-none focus:border-green-500/50 text-[15px] md:text-[16px]"
             />
           </div>
 
@@ -479,13 +479,13 @@ function IncomeModal({ categories, onClose, onSave }: { categories: string[], on
             <button 
               type="button"
               onClick={onClose}
-              className="px-4 md:px-6 py-2 md:py-2.5 text-xs md:text-sm font-bold text-white/40 hover:text-white transition-colors"
+              className="px-4 md:px-6 py-2 md:py-2.5 text-[15px] md:text-[16px] font-bold text-white/40 hover:text-white transition-colors"
             >
               Cancelar
             </button>
             <button 
               type="submit"
-              className="flex items-center gap-2 px-6 md:px-8 py-2 md:py-2.5 bg-green-500 hover:bg-green-600 text-black rounded-lg md:rounded-xl transition-all font-bold shadow-[0_0_20px_rgba(34,197,94,0.3)] text-sm md:text-base"
+              className="flex items-center gap-2 px-6 md:px-8 py-2 md:py-2.5 bg-green-500 hover:bg-green-600 text-black rounded-lg md:rounded-xl transition-all font-bold shadow-[0_0_20px_rgba(34,197,94,0.3)] text-[15px] md:text-[16px]"
             >
               <Save className="w-3.5 h-3.5 md:w-4 md:h-4" />
               Guardar Ingreso

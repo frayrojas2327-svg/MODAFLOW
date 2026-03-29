@@ -80,6 +80,12 @@ service cloud.firestore {
              data.ownerUid == request.auth.uid;
     }
 
+    function isValidChatMessage(data) {
+      return data.role in ['user', 'assistant'] &&
+             data.content is string && data.content.size() > 0 && data.content.size() < 5000 &&
+             data.ownerUid == request.auth.uid;
+    }
+
     // Rules
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
@@ -117,6 +123,12 @@ service cloud.firestore {
 
     match /settings/{userId} {
       allow read, write: if isOwner(userId) || isAdmin();
+    }
+
+    match /chatMessages/{messageId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isNewDocOwner() && isValidChatMessage(request.resource.data);
+      allow delete: if isDocOwner() || isAdmin();
     }
   }
 }

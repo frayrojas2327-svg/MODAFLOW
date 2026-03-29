@@ -7,6 +7,8 @@ export interface UserSettings {
   productCategories: string[];
   expenseCategories: string[];
   incomeCategories: string[];
+  geminiApiKey?: string;
+  openaiApiKey?: string;
 }
 
 export interface Variant {
@@ -42,6 +44,7 @@ export interface Sale {
   discount: number;
   total: number;
   paymentMethod: PaymentMethod;
+  notes?: string;
   date: string;
   ownerUid: string;
 }
@@ -61,6 +64,14 @@ export interface Income {
   category: string;
   amount: number;
   date: string;
+  ownerUid: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
   ownerUid: string;
 }
 
