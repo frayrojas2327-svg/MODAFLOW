@@ -24,11 +24,12 @@ import Settings from './components/Settings';
 import Login from './components/Login';
 import Logo from './components/Logo';
 import AIAdvisor from './components/AIAdvisor';
+import Goals from './components/Goals';
 import { auth, signOut, onAuthStateChanged, User, db, doc, onSnapshot } from './firebase';
 import { firebaseService } from './services/firebaseService';
 import { AppState, Product, Sale, Expense, Income } from './types';
 
-type View = 'dashboard' | 'inventory' | 'sales' | 'expenses' | 'incomes' | 'finances' | 'settings';
+type View = 'dashboard' | 'inventory' | 'sales' | 'expenses' | 'incomes' | 'finances' | 'goals' | 'settings';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
 
@@ -46,6 +47,7 @@ export default function App() {
     sales: [],
     expenses: [],
     incomes: [],
+    goals: [],
     settings: {
       productCategories: ['Polos', 'Poleras', 'Pantalones', 'Accesorios', 'Otros'],
       expenseCategories: ['Producción', 'Publicidad', 'Envíos', 'Materiales', 'Otros'],
@@ -58,6 +60,17 @@ export default function App() {
     // but onSnapshot handles it for Firebase.
     // For Demo Mode, it's just a placeholder.
   };
+
+  useEffect(() => {
+    const handleViewChange = (e: any) => {
+      if (e.detail) {
+        setActiveView(e.detail as View);
+        setIsSidebarOpen(false);
+      }
+    };
+    window.addEventListener('change-view', handleViewChange);
+    return () => window.removeEventListener('change-view', handleViewChange);
+  }, []);
 
   useEffect(() => {
     let unsubProfile: (() => void) | null = null;
@@ -119,6 +132,7 @@ export default function App() {
         sales: mockSales, 
         expenses: [], 
         incomes: [],
+        goals: [],
         settings: {
           productCategories: ['Polos', 'Poleras', 'Pantalones', 'Accesorios', 'Otros'],
           expenseCategories: ['Producción', 'Publicidad', 'Envíos', 'Materiales', 'Otros'],
@@ -140,6 +154,9 @@ export default function App() {
     const unsubIncomes = firebaseService.subscribeIncomes((incomes) => {
       setData(prev => ({ ...prev, incomes }));
     });
+    const unsubGoals = firebaseService.subscribeGoals((goals) => {
+      setData(prev => ({ ...prev, goals }));
+    });
     const unsubSettings = firebaseService.subscribeSettings((settings) => {
       setData(prev => ({ ...prev, settings }));
     });
@@ -149,6 +166,7 @@ export default function App() {
       unsubSales();
       unsubExpenses();
       unsubIncomes();
+      unsubGoals();
       unsubSettings();
     };
   }, [user]);
@@ -278,6 +296,21 @@ export default function App() {
               <div className="pt-4 md:pt-6 border-t border-white/5 space-y-1 md:space-y-2">
                 <button 
                   onClick={() => {
+                    setActiveView('goals');
+                    setIsSidebarOpen(false);
+                  }}
+                  className={cn(
+                    "w-full flex items-center gap-2.5 md:gap-3 px-3 md:px-4 py-2 md:py-3 rounded-lg md:rounded-xl transition-all text-[16px] md:text-base",
+                    activeView === 'goals' 
+                      ? "bg-orange-500 text-black font-semibold shadow-[0_0_15px_rgba(249,115,22,0.2)]" 
+                      : "text-white/40 hover:text-white hover:bg-white/5"
+                  )}
+                >
+                  <BarChart3 className={cn("w-4 h-4 md:w-5 md:h-5", activeView === 'goals' ? "text-black" : "text-white/40")} />
+                  Metas
+                </button>
+                <button 
+                  onClick={() => {
                     setActiveView('settings');
                     setIsSidebarOpen(false);
                   }}
@@ -322,6 +355,7 @@ export default function App() {
                   />
                 )}
                 {activeView === 'sales' && <Sales data={data} onUpdate={handleUpdate} />}
+                {activeView === 'goals' && <Goals data={data} onUpdate={handleUpdate} />}
                 {activeView === 'incomes' && <Incomes data={data} onUpdate={handleUpdate} />}
                 {activeView === 'expenses' && <Expenses data={data} onUpdate={handleUpdate} />}
                 {activeView === 'finances' && <Finances data={data} />}

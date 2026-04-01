@@ -110,7 +110,7 @@ export default function Settings({ data, userProfile, onUpdate }: SettingsProps)
     try {
       // Update profile
       await firebaseService.updateUserProfile({
-        ...userProfile,
+        ...(userProfile || {}),
         companyName: companyName.trim()
       });
 
@@ -125,9 +125,24 @@ export default function Settings({ data, userProfile, onUpdate }: SettingsProps)
 
       toast.success('Configuración guardada correctamente');
       onUpdate();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving settings:', error);
-      toast.error('Error al guardar la configuración');
+      let errorMessage = 'Error al guardar la configuración';
+      
+      if (error.message) {
+        try {
+          const parsedError = JSON.parse(error.message);
+          if (parsedError.error && parsedError.error.includes('Missing or insufficient permissions')) {
+            errorMessage = `Error de permisos (${parsedError.path}): No tienes autorización para guardar estos cambios.`;
+          } else if (parsedError.error) {
+            errorMessage = `Error: ${parsedError.error}`;
+          }
+        } catch (e) {
+          errorMessage = `Error: ${error.message}`;
+        }
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setIsSaving(false);
     }

@@ -334,32 +334,46 @@ export default function Dashboard({ data }: DashboardProps) {
         </div>
 
         <div className="bg-black p-4 md:p-6 rounded-2xl border border-white/5 shadow-xl">
-          <h3 className="text-base md:text-lg font-semibold mb-4 md:mb-6">Ventas Recientes</h3>
+          <div className="flex items-center justify-between mb-4 md:mb-6">
+            <h3 className="text-base md:text-lg font-semibold">Ventas Recientes</h3>
+            <button 
+              onClick={() => window.dispatchEvent(new CustomEvent('change-view', { detail: 'sales' }))}
+              className="text-[14px] font-bold text-orange-500 hover:text-orange-400 transition-colors"
+            >
+              Ver todas
+            </button>
+          </div>
           <div className="space-y-3 md:space-y-4">
             {data.sales.slice(-5).reverse().map(sale => (
-              <div key={sale.id} className="flex items-center justify-between p-3 hover:bg-white/5 rounded-xl transition-colors">
+              <div key={sale.id} className="flex items-center justify-between p-3 hover:bg-white/5 rounded-xl transition-colors border border-transparent hover:border-white/5">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white/5 rounded-lg flex items-center justify-center text-xs font-bold">
+                  <div className="w-10 h-10 bg-white/5 rounded-lg flex items-center justify-center text-xs font-bold border border-white/10">
                     {sale.size}
                   </div>
                   <div>
-                    <p className="font-medium text-[16px]">{sale.productName}</p>
-                    <div className="flex items-center gap-1.5 text-[15px] text-white/40">
+                    <p className="font-bold text-[16px]">{sale.productName}</p>
+                    <div className="flex items-center gap-1.5 text-[14px] text-white/40">
                       <span>{format(new Date(sale.date), 'HH:mm')}</span>
-                      <Calendar className="w-4 h-4 text-orange-500" />
                       <span>•</span>
-                      <span>{sale.paymentMethod}</span>
+                      <span className={cn(
+                        "px-1.5 py-0.5 rounded text-[12px] font-bold",
+                        sale.paymentMethod === 'Efectivo' ? "bg-green-500/10 text-green-500" :
+                        sale.paymentMethod === 'Transferencia' ? "bg-blue-500/10 text-blue-500" :
+                        "bg-purple-500/10 text-purple-500"
+                      )}>
+                        {sale.paymentMethod}
+                      </span>
                     </div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-[16px]">{formatCurrency(sale.total)}</p>
-                  <p className="text-[15px] text-green-500">Completada</p>
+                  <p className="font-black text-[16px] text-orange-500">{formatCurrency(sale.total)}</p>
+                  <p className="text-[13px] text-white/30">{format(new Date(sale.date), 'dd MMM', { locale: es })}</p>
                 </div>
               </div>
             ))}
             {data.sales.length === 0 && (
-              <div className="text-center py-8 text-white/20">
+              <div className="text-center py-8 text-white/20 italic">
                 No hay ventas registradas aún.
               </div>
             )}

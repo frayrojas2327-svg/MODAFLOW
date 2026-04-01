@@ -45,21 +45,36 @@ export default function Inventory({ data, onUpdate, recentlySold, setRecentlySol
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const [timeRange, setTimeRange] = useState<'7d' | '30d' | '6m' | '12m' | 'all'>('all');
+  const [timeRange, setTimeRange] = useState<'1d' | '7d' | '30d' | '6m' | '12m' | 'all' | 'custom'>('all');
   const [startDate, setStartDate] = useState(subDays(new Date(), 30));
   const [endDate, setEndDate] = useState(new Date());
+  const [customDays, setCustomDays] = useState<string>('');
 
-  const handleRangeChange = (range: '7d' | '30d' | '6m' | '12m' | 'all') => {
+  const handleRangeChange = (range: '1d' | '7d' | '30d' | '6m' | '12m' | 'all') => {
     setTimeRange(range);
+    setCustomDays('');
     if (range === 'all') return;
     const end = new Date();
     let start = new Date();
-    if (range === '7d') start = subDays(end, 7);
+    if (range === '1d') start = subDays(end, 1);
+    else if (range === '7d') start = subDays(end, 7);
     else if (range === '30d') start = subDays(end, 30);
     else if (range === '6m') start = subMonths(end, 6);
     else if (range === '12m') start = subMonths(end, 12);
     setStartDate(start);
     setEndDate(end);
+  };
+
+  const handleCustomDaysChange = (daysStr: string) => {
+    setCustomDays(daysStr);
+    const days = parseInt(daysStr);
+    if (!isNaN(days) && days > 0) {
+      const end = new Date();
+      const start = subDays(end, days);
+      setStartDate(start);
+      setEndDate(end);
+      setTimeRange('custom');
+    }
   };
 
   const productCategories = data.settings.productCategories;
@@ -191,7 +206,7 @@ export default function Inventory({ data, onUpdate, recentlySold, setRecentlySol
       {/* Date Filters */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
         <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 overflow-x-auto no-scrollbar max-w-full">
-          {(['7d', '30d', '6m', '12m'] as const).map((range) => (
+          {(['1d', '7d', '30d', '6m', '12m'] as const).map((range) => (
             <button 
               key={range}
               onClick={() => handleRangeChange(range)}
@@ -212,6 +227,18 @@ export default function Inventory({ data, onUpdate, recentlySold, setRecentlySol
           >
             Todo
           </button>
+        </div>
+
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-xl border border-white/10">
+          <span className="text-white/40 text-[13px] font-bold uppercase whitespace-nowrap">Días:</span>
+          <input 
+            type="number"
+            min="1"
+            placeholder="Ej: 1"
+            value={customDays}
+            onChange={(e) => handleCustomDaysChange(e.target.value)}
+            className="w-12 bg-transparent text-orange-500 font-bold focus:outline-none text-center placeholder:text-white/10"
+          />
         </div>
         
         {timeRange !== 'all' && (
@@ -792,9 +819,13 @@ export default function Inventory({ data, onUpdate, recentlySold, setRecentlySol
           <ProductModal 
             product={editingProduct} 
             categories={productCategories}
-            onClose={() => setIsModalOpen(false)} 
+            onClose={() => {
+              setIsModalOpen(false);
+              setEditingProduct(null);
+            }} 
             onSave={() => {
               setIsModalOpen(false);
+              setEditingProduct(null);
               onUpdate();
             }}
           />
@@ -833,6 +864,7 @@ function CategoryManagementModal({
   onClose: () => void, 
   onSave: (cats: string[]) => Promise<void> 
 }) {
+  const [isSaving, setIsSaving] = useState(false);
   const [newCats, setNewCats] = useState<string[]>(categories);
   const [input, setInput] = useState('');
 
@@ -845,6 +877,19 @@ function CategoryManagementModal({
 
   const handleRemove = (cat: string) => {
     setNewCats(newCats.filter(c => c !== cat));
+  };
+
+  const handleSave = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      await onSave(newCats);
+      toast.success('Categorías actualizadas correctamente');
+    } catch (error) {
+      console.error('Error saving categories:', error);
+      toast.error('Error al guardar las categorías');
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -902,10 +947,14 @@ function CategoryManagementModal({
           </div>
 
           <button 
-            onClick={() => onSave(newCats)}
-            className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-black rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(249,115,22,0.3)]"
+            onClick={handleSave}
+            disabled={isSaving}
+            className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-black rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(249,115,22,0.3)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            Guardar Cambios
+            {isSaving ? (
+              <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+            ) : null}
+            {isSaving ? 'Guardando...' : 'Guardar Cambios'}
           </button>
         </div>
       </motion.div>
@@ -914,6 +963,7 @@ function CategoryManagementModal({
 }
 
 function ProductModal({ product, categories, onClose, onSave }: { product: Product | null, categories: string[], onClose: () => void, onSave: () => void }) {
+  const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState<Partial<Product>>(product || {
     name: '',
     category: categories[0] || 'Otros',
@@ -964,20 +1014,31 @@ function ProductModal({ product, categories, onClose, onSave }: { product: Produ
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSaving) return;
+
     const uid = auth.currentUser?.uid;
     if (!uid) return;
 
-    if (product) {
-      await firebaseService.updateProduct({ ...product, ...formData } as Product);
-    } else {
-      await firebaseService.addProduct({
-        ...formData,
-        id: generateId(),
-        createdAt: new Date().toISOString(),
-        ownerUid: uid
-      } as Product);
+    setIsSaving(true);
+    try {
+      if (product) {
+        await firebaseService.updateProduct({ ...product, ...formData } as Product);
+        toast.success('Producto actualizado correctamente');
+      } else {
+        await firebaseService.addProduct({
+          ...formData,
+          id: generateId(),
+          createdAt: new Date().toISOString(),
+          ownerUid: uid
+        } as Product);
+        toast.success('Producto guardado correctamente');
+      }
+      onSave();
+    } catch (error) {
+      console.error('Error saving product:', error);
+      toast.error('Error al guardar el producto');
+      setIsSaving(false);
     }
-    onSave();
   };
 
   return (
@@ -1190,24 +1251,30 @@ function ProductModal({ product, categories, onClose, onSave }: { product: Produ
               ))}
             </div>
           </div>
-        </form>
 
-        <div className="p-4 md:p-6 border-t border-white/5 bg-white/[0.02] flex justify-end gap-3">
-          <button 
-            type="button"
-            onClick={onClose}
-            className="px-4 md:px-6 py-2 md:py-2.5 text-[15px] md:text-[16px] font-bold text-white/40 hover:text-white transition-colors"
-          >
-            Cancelar
-          </button>
-          <button 
-            onClick={handleSubmit}
-            className="flex items-center gap-2 px-6 md:px-8 py-2 md:py-2.5 bg-orange-500 hover:bg-orange-600 text-black rounded-xl transition-all font-bold shadow-[0_0_20px_rgba(249,115,22,0.3)] text-[15px] md:text-[16px]"
-          >
-            <Save className="w-4 h-4" />
-            Guardar Producto
-          </button>
-        </div>
+          <div className="pt-4 border-t border-white/5 flex justify-end gap-3">
+            <button 
+              type="button"
+              onClick={onClose}
+              disabled={isSaving}
+              className="px-4 md:px-6 py-2 md:py-2.5 text-[15px] md:text-[16px] font-bold text-white/40 hover:text-white transition-colors disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button 
+              type="submit"
+              disabled={isSaving}
+              className="flex items-center gap-2 px-6 md:px-8 py-2 md:py-2.5 bg-orange-500 hover:bg-orange-600 text-black rounded-xl transition-all font-bold shadow-[0_0_20px_rgba(249,115,22,0.3)] text-[15px] md:text-[16px] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSaving ? (
+                <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              {isSaving ? 'Guardando...' : 'Guardar Producto'}
+            </button>
+          </div>
+        </form>
       </motion.div>
     </div>
   );

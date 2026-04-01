@@ -299,6 +299,7 @@ function CategoryManagementModal({
   onClose: () => void, 
   onSave: (cats: string[]) => Promise<void> 
 }) {
+  const [isSaving, setIsSaving] = useState(false);
   const [newCats, setNewCats] = useState<string[]>(categories);
   const [input, setInput] = useState('');
 
@@ -311,6 +312,17 @@ function CategoryManagementModal({
 
   const handleRemove = (cat: string) => {
     setNewCats(newCats.filter(c => c !== cat));
+  };
+
+  const handleSave = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      await onSave(newCats);
+    } catch (error) {
+      console.error('Error saving categories:', error);
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -368,10 +380,14 @@ function CategoryManagementModal({
           </div>
 
           <button 
-            onClick={() => onSave(newCats)}
-            className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-black rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(249,115,22,0.3)]"
+            onClick={handleSave}
+            disabled={isSaving}
+            className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-black rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(249,115,22,0.3)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            Guardar Cambios
+            {isSaving ? (
+              <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+            ) : null}
+            {isSaving ? 'Guardando...' : 'Guardar Cambios'}
           </button>
         </div>
       </motion.div>
@@ -380,6 +396,7 @@ function CategoryManagementModal({
 }
 
 function IncomeModal({ categories, onClose, onSave }: { categories: string[], onClose: () => void, onSave: () => void }) {
+  const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState<Partial<Income>>({
     description: '',
     category: categories[0] || 'Otros',
@@ -389,15 +406,23 @@ function IncomeModal({ categories, onClose, onSave }: { categories: string[], on
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSaving) return;
+
     const uid = auth.currentUser?.uid;
     if (!uid) return;
 
-    await firebaseService.addIncome({
-      ...formData,
-      id: generateId(),
-      ownerUid: uid
-    } as Income);
-    onSave();
+    setIsSaving(true);
+    try {
+      await firebaseService.addIncome({
+        ...formData,
+        id: generateId(),
+        ownerUid: uid
+      } as Income);
+      onSave();
+    } catch (error) {
+      console.error('Error saving income:', error);
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -417,7 +442,7 @@ function IncomeModal({ categories, onClose, onSave }: { categories: string[], on
       >
         <div className="flex items-center justify-between p-4 md:p-6 border-b border-white/5">
           <h2 className="text-lg md:text-xl font-bold">Registrar Ingreso</h2>
-          <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-full transition-colors">
+          <button onClick={onClose} disabled={isSaving} className="p-2 hover:bg-white/5 rounded-full transition-colors disabled:opacity-50">
             <X className="w-4 h-4 md:w-5 md:h-5 text-white/40" />
           </button>
         </div>
@@ -479,16 +504,22 @@ function IncomeModal({ categories, onClose, onSave }: { categories: string[], on
             <button 
               type="button"
               onClick={onClose}
-              className="px-4 md:px-6 py-2 md:py-2.5 text-[15px] md:text-[16px] font-bold text-white/40 hover:text-white transition-colors"
+              disabled={isSaving}
+              className="px-4 md:px-6 py-2 md:py-2.5 text-[15px] md:text-[16px] font-bold text-white/40 hover:text-white transition-colors disabled:opacity-50"
             >
               Cancelar
             </button>
             <button 
               type="submit"
-              className="flex items-center gap-2 px-6 md:px-8 py-2 md:py-2.5 bg-green-500 hover:bg-green-600 text-black rounded-lg md:rounded-xl transition-all font-bold shadow-[0_0_20px_rgba(34,197,94,0.3)] text-[15px] md:text-[16px]"
+              disabled={isSaving}
+              className="flex items-center gap-2 px-6 md:px-8 py-2 md:py-2.5 bg-green-500 hover:bg-green-600 text-black rounded-lg md:rounded-xl transition-all font-bold shadow-[0_0_20px_rgba(34,197,94,0.3)] text-[15px] md:text-[16px] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Save className="w-3.5 h-3.5 md:w-4 md:h-4" />
-              Guardar Ingreso
+              {isSaving ? (
+                <div className="w-3.5 h-3.5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+              ) : (
+                <Save className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              )}
+              {isSaving ? 'Guardando...' : 'Guardar Ingreso'}
             </button>
           </div>
         </form>

@@ -299,6 +299,16 @@ export default function AIAdvisor({ data }: AIAdvisorProps) {
               <p className="text-center text-[11px] md:text-[12px] text-white/20 mt-3 font-medium uppercase tracking-widest">
                 Impulsado por Gemini AI • ModaFlow
               </p>
+              {!data.settings.geminiApiKey && !data.settings.openaiApiKey && (
+                <p className="text-center text-[10px] text-orange-500/40 mt-1 font-medium">
+                  Usa tus propias llaves en <span className="underline cursor-pointer hover:text-orange-500" onClick={() => {
+                    // We need a way to change the view from here. 
+                    // Since we don't have a global state for activeView, 
+                    // we might need to pass a setter or use a custom event.
+                    window.dispatchEvent(new CustomEvent('change-view', { detail: 'settings' }));
+                  }}>Configuración</span> para mejores consejos.
+                </p>
+              )}
             </div>
           </motion.div>
         )}

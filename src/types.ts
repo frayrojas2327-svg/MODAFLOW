@@ -75,10 +75,22 @@ export interface ChatMessage {
   ownerUid: string;
 }
 
+export interface Goal {
+  id: string;
+  title: string;
+  targetAmount: number;
+  currentAmount: number;
+  startDate: string;
+  endDate: string;
+  type: 'sales' | 'profit' | 'savings';
+  ownerUid: string;
+}
+
 export interface AppState {
   products: Product[];
   sales: Sale[];
   expenses: Expense[];
   incomes: Income[];
+  goals: Goal[];
   settings: UserSettings;
 }

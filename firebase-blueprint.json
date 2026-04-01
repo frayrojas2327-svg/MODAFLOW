@@ -66,6 +66,32 @@
       },
       "required": ["id", "description", "amount", "ownerUid"]
     },
+    "Income": {
+      "title": "Income",
+      "description": "A recorded business income.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "amount": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" },
+        "ownerUid": { "type": "string" }
+      },
+      "required": ["id", "description", "amount", "ownerUid"]
+    },
+    "Settings": {
+      "title": "User Settings",
+      "description": "Business settings and AI configuration.",
+      "type": "object",
+      "properties": {
+        "productCategories": { "type": "array", "items": { "type": "string" } },
+        "expenseCategories": { "type": "array", "items": { "type": "string" } },
+        "incomeCategories": { "type": "array", "items": { "type": "string" } },
+        "geminiApiKey": { "type": "string" },
+        "openaiApiKey": { "type": "string" }
+      }
+    },
     "ChatMessage": {
       "title": "Chat Message",
       "description": "A message in the AI Advisor chat history.",
@@ -78,6 +104,22 @@
         "ownerUid": { "type": "string" }
       },
       "required": ["id", "role", "content", "timestamp", "ownerUid"]
+    },
+    "Goal": {
+      "title": "Goal",
+      "description": "Financial goal or projection.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "targetAmount": { "type": "number" },
+        "currentAmount": { "type": "number" },
+        "startDate": { "type": "string", "format": "date-time" },
+        "endDate": { "type": "string", "format": "date-time" },
+        "type": { "type": "string", "enum": ["sales", "profit", "savings"] },
+        "ownerUid": { "type": "string" }
+      },
+      "required": ["id", "title", "targetAmount", "startDate", "endDate", "type", "ownerUid"]
     }
   },
   "firestore": {
@@ -97,9 +139,21 @@
       "schema": "Expense",
       "description": "Expense records."
     },
+    "/incomes/{incomeId}": {
+      "schema": "Income",
+      "description": "Income records."
+    },
+    "/settings/{userId}": {
+      "schema": "Settings",
+      "description": "User settings and API keys."
+    },
     "/chatMessages/{messageId}": {
       "schema": "ChatMessage",
       "description": "AI Advisor chat history."
+    },
+    "/goals/{goalId}": {
+      "schema": "Goal",
+      "description": "Financial goals."
     }
   }
 }

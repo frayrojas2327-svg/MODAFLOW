@@ -51,6 +51,7 @@ const initialState: AppState = {
   sales: [],
   expenses: sampleExpenses,
   incomes: sampleIncomes,
+  goals: [],
   settings: {
     productCategories: ['Polos', 'Poleras', 'Pantalones', 'Accesorios', 'Otros'],
     expenseCategories: ['Producción', 'Publicidad', 'Envíos', 'Materiales', 'Otros'],
@@ -69,6 +70,7 @@ export const storage = {
       const parsed = JSON.parse(data);
       // Ensure new fields exist for backward compatibility
       if (!parsed.incomes) parsed.incomes = [];
+      if (!parsed.goals) parsed.goals = [];
       if (!parsed.settings.incomeCategories) parsed.settings.incomeCategories = ['Otros'];
       return parsed;
     } catch (e) {

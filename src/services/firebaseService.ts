@@ -13,7 +13,7 @@ import {
   updateDoc,
   runTransaction
 } from '../firebase';
-import { Product, Sale, Expense, Income, AppState, UserSettings, ChatMessage } from '../types';
+import { Product, Sale, Expense, Income, AppState, UserSettings, ChatMessage, Goal } from '../types';
 
 export enum OperationType {
   CREATE = 'create',
@@ -167,6 +167,36 @@ export const firebaseService = {
     }
   },
 
+  deleteSale: async (sale: Sale) => {
+    try {
+      await runTransaction(db, async (transaction) => {
+        const productRef = doc(db, 'products', sale.productId);
+        const productSnap = await transaction.get(productRef);
+        
+        if (productSnap.exists()) {
+          const product = productSnap.data() as Product;
+          const variantIndex = product.variants.findIndex(v => v.id === sale.variantId);
+          
+          if (variantIndex !== -1) {
+            // Restore stock
+            const updatedVariants = [...product.variants];
+            updatedVariants[variantIndex] = {
+              ...updatedVariants[variantIndex],
+              stock: updatedVariants[variantIndex].stock + sale.quantity
+            };
+            transaction.update(productRef, { variants: updatedVariants });
+          }
+        }
+
+        // Delete sale
+        const saleRef = doc(db, 'sales', sale.id);
+        transaction.delete(saleRef);
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.TRANSACTION, `sales/${sale.id}`);
+    }
+  },
+
   // Expenses
   subscribeExpenses: (callback: (expenses: Expense[]) => void) => {
     const uid = auth.currentUser?.uid;
@@ -238,6 +268,8 @@ export const firebaseService = {
     if (!user) return;
     try {
       const updatedProfile = {
+        displayName: user.displayName,
+        photoURL: user.photoURL,
         ...profile,
         uid: user.uid,
         email: user.email,
@@ -283,13 +315,49 @@ export const firebaseService = {
       handleFirestoreError(error, OperationType.DELETE, 'chatMessages');
     }
   },
+
+  // Goals
+  subscribeGoals: (callback: (goals: Goal[]) => void) => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return () => {};
+    
+    const q = query(collection(db, 'goals'), where('ownerUid', '==', uid));
+    return onSnapshot(q, (snapshot) => {
+      const goals = snapshot.docs.map(doc => doc.data() as Goal);
+      callback(goals);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'goals'));
+  },
+
+  addGoal: async (goal: Goal) => {
+    try {
+      await setDoc(doc(db, 'goals', goal.id), goal);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, `goals/${goal.id}`);
+    }
+  },
+
+  updateGoal: async (goal: Goal) => {
+    try {
+      await updateDoc(doc(db, 'goals', goal.id), { ...goal });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `goals/${goal.id}`);
+    }
+  },
+
+  deleteGoal: async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'goals', id));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `goals/${id}`);
+    }
+  },
   
   resetUserData: async () => {
     const uid = auth.currentUser?.uid;
     if (!uid) return;
     
     try {
-      const collections = ['products', 'sales', 'expenses', 'incomes'];
+      const collections = ['products', 'sales', 'expenses', 'incomes', 'goals'];
       
       for (const collName of collections) {
         const q = query(collection(db, collName), where('ownerUid', '==', uid));
