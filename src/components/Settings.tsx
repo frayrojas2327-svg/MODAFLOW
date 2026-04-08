@@ -18,6 +18,7 @@ import {
 import { AppState, UserSettings } from '../types';
 import { firebaseService } from '../services/firebaseService';
 import { toast } from 'sonner';
+import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from "@google/genai";
 import OpenAI from "openai";
@@ -211,6 +212,48 @@ export default function Settings({ data, userProfile, onUpdate, deferredPrompt }
       toast.error('Error al reiniciar los datos');
     } finally {
       setIsResetting(false);
+    }
+  };
+
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+
+  const handleUpdateApp = async () => {
+    if (!('serviceWorker' in navigator)) {
+      toast.error('Tu navegador no soporta actualizaciones automáticas.');
+      return;
+    }
+
+    setIsCheckingUpdate(true);
+    try {
+      const registration = await navigator.serviceWorker.getRegistration();
+      if (registration) {
+        toast.promise(registration.update(), {
+          loading: 'Buscando actualizaciones...',
+          success: () => {
+            if (registration.waiting) {
+              return 'Nueva versión encontrada. Reiniciando...';
+            }
+            return 'Ya tienes la versión más reciente.';
+          },
+          error: 'Error al buscar actualizaciones'
+        });
+
+        // Wait a bit for the update to process
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // If there's a waiting service worker, skip waiting and reload
+        if (registration.waiting) {
+          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+          // The controllerchange listener in index.html will handle the reload
+        }
+      } else {
+        toast.info('No se encontró un Service Worker activo.');
+      }
+    } catch (error) {
+      console.error('Update error:', error);
+      toast.error('Error al intentar actualizar la aplicación.');
+    } finally {
+      setIsCheckingUpdate(false);
     }
   };
 
@@ -445,6 +488,16 @@ export default function Settings({ data, userProfile, onUpdate, deferredPrompt }
           </div>
           
           <div className="flex flex-col gap-3 min-w-[200px]">
+            <p className="text-[12px] text-white/30 text-center mb-1">¿Hay cambios nuevos? Pulsa aquí:</p>
+            <button 
+              onClick={handleUpdateApp}
+              disabled={isCheckingUpdate}
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-orange-500/10 hover:bg-orange-500 text-orange-500 hover:text-black rounded-xl transition-all font-bold text-[15px] border border-orange-500/20"
+            >
+              <RefreshCcw className={cn("w-4 h-4", isCheckingUpdate && "animate-spin")} />
+              {isCheckingUpdate ? 'Buscando...' : 'Actualizar Nueva Versión'}
+            </button>
+
             {deferredPrompt ? (
               <button 
                 onClick={async () => {
@@ -460,10 +513,22 @@ export default function Settings({ data, userProfile, onUpdate, deferredPrompt }
                 Instalar Ahora
               </button>
             ) : (
-              <div className="p-3 bg-white/5 rounded-xl border border-white/10 text-center">
-                <p className="text-[12px] text-white/40 font-medium">
-                  Para instalar: Toca <span className="text-orange-500 font-bold">Instalar</span> y luego <span className="text-orange-500 font-bold">"Añadir a pantalla de inicio"</span> en tu navegador.
-                </p>
+              <div className="space-y-3">
+                <div className="p-3 bg-white/5 rounded-xl border border-white/10 text-center">
+                  <p className="text-[12px] text-white/40 font-medium">
+                    Si no ves el botón de instalar, usa el menú de tu navegador:
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="p-2 bg-white/5 rounded-lg border border-white/5 text-center">
+                    <p className="text-[10px] text-white/30 uppercase font-bold mb-1">Android (Chrome)</p>
+                    <p className="text-[11px] text-white/60">Menú ⋮ &gt; Instalar aplicación</p>
+                  </div>
+                  <div className="p-2 bg-white/5 rounded-lg border border-white/5 text-center">
+                    <p className="text-[10px] text-white/30 uppercase font-bold mb-1">iOS (Safari)</p>
+                    <p className="text-[11px] text-white/60">Compartir <Download className="w-3 h-3 inline" /> &gt; Añadir a inicio</p>
+                  </div>
+                </div>
               </div>
             )}
           </div>
