@@ -440,7 +440,7 @@ export default function Settings({ data, userProfile, onUpdate, deferredPrompt }
           <div className="space-y-2">
             <h3 className="font-bold text-[16px]">Instalar ModaFlow en tu celular</h3>
             <p className="text-[14px] text-white/50 leading-relaxed max-w-md">
-              Accede a tu negocio más rápido instalando la aplicación en tu pantalla de inicio. Funciona sin conexión y ocupa muy poco espacio.
+              Convierte ModaFlow en una aplicación real. Al instalarla, se eliminará la barra de navegación de Chrome y aparecerá en tu pantalla de inicio con su propio icono.
             </p>
           </div>
           

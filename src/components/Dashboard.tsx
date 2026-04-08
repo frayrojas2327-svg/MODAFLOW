@@ -471,24 +471,33 @@ function StatCard({ title, value, icon: Icon, trend, color, description, isMain 
     blue: "text-blue-500 bg-blue-500/10 border-blue-500/20",
   };
 
+  // Special style for Balance when it's positive (isMain and color green)
+  const isPositiveBalance = isMain && color === 'green';
+
   return (
     <div className={cn(
       "p-6 md:p-8 rounded-[2.5rem] border transition-all group relative overflow-hidden",
-      isMain ? "bg-orange-500 border-orange-400" : "bg-black border-white/5 hover:border-white/10"
+      isPositiveBalance 
+        ? "bg-black border-green-500/30" 
+        : isMain 
+          ? "bg-orange-500 border-orange-400" 
+          : "bg-black border-white/5 hover:border-white/10"
     )}>
       <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-        <Icon className={cn("w-20 h-20", isMain ? "text-black" : "text-white")} />
+        <Icon className={cn("w-20 h-20", (isMain && !isPositiveBalance) ? "text-black" : "text-white")} />
       </div>
       
       <div className="flex items-center justify-between mb-6">
         <div className={cn(
           "p-3 rounded-2xl border", 
+          isPositiveBalance ? "bg-white/5 border-white/10 text-green-500" :
           isMain ? "bg-black/20 border-black/10 text-black" : colorClasses[color]
         )}>
           <Icon className="w-6 h-6" />
         </div>
         <span className={cn(
           "text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest border",
+          isPositiveBalance ? "bg-white/5 border-white/10 text-green-500" :
           isMain ? "bg-black/20 border-black/10 text-black" : colorClasses[color]
         )}>
           {trend}
@@ -498,12 +507,14 @@ function StatCard({ title, value, icon: Icon, trend, color, description, isMain 
       <div className="space-y-1">
         <p className={cn(
           "text-[11px] font-black uppercase tracking-[0.2em]",
+          isPositiveBalance ? "text-white/30" :
           isMain ? "text-black/60" : "text-white/30"
         )}>
           {title}
         </p>
         <h4 className={cn(
           "text-3xl md:text-4xl font-black tracking-tighter",
+          isPositiveBalance ? "text-white" :
           isMain ? "text-black" : "text-white group-hover:text-orange-500 transition-colors"
         )}>
           {value}
@@ -511,6 +522,7 @@ function StatCard({ title, value, icon: Icon, trend, color, description, isMain 
         {description && (
           <p className={cn(
             "text-[10px] font-medium mt-2",
+            isPositiveBalance ? "text-white/20" :
             isMain ? "text-black/40" : "text-white/20"
           )}>
             {description}
