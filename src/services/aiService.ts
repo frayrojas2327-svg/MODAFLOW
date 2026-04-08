@@ -8,6 +8,10 @@ export const aiService = {
     const geminiKey = state.settings.geminiApiKey || process.env.GEMINI_API_KEY || '';
     const openaiKey = state.settings.openaiApiKey;
 
+    if (!geminiKey && !openaiKey) {
+      return "No se ha configurado ninguna clave de API (API Key). Por favor, ve a la sección de Configuración y añade tu clave de Google Gemini para usar el asesor.";
+    }
+
     // Prepare a summary of the business data for context
     const totalSales = state.sales.reduce((acc, s) => acc + s.total, 0);
     const totalExpenses = state.expenses.reduce((acc, e) => acc + e.amount, 0);
@@ -90,9 +94,19 @@ export const aiService = {
       });
 
       return response.text || "Lo siento, no pude procesar tu solicitud en este momento.";
-    } catch (error) {
+    } catch (error: any) {
       console.error("AI Service Error:", error);
-      return "Hubo un error al conectar con el asesor de IA. Por favor, verifica tu conexión o intenta más tarde.";
+      
+      // Check for common API key errors
+      if (error.message?.includes('API_KEY_INVALID') || error.message?.includes('invalid API key')) {
+        return "La clave de API (API Key) parece ser inválida. Por favor, verifícala en la sección de Configuración.";
+      }
+      
+      if (error.message?.includes('quota') || error.message?.includes('429')) {
+        return "Se ha alcanzado el límite de uso de la IA. Intenta de nuevo en unos minutos o usa tu propia API Key.";
+      }
+
+      return "Hubo un error al conectar con el asesor de IA. Verifica tu conexión a internet o que tu API Key sea correcta en Configuración.";
     }
   }
 };

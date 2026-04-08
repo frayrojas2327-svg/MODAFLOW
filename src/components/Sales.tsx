@@ -16,6 +16,8 @@ import { formatCurrency, generateId, cn } from '../lib/utils';
 import { firebaseService } from '../services/firebaseService';
 import { auth } from '../firebase';
 import { motion, AnimatePresence } from 'motion/react';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 
 interface SalesProps {
@@ -156,29 +158,29 @@ export default function Sales({ data, onUpdate }: SalesProps) {
   };
 
   return (
-    <div className="space-y-6 md:space-y-8">
+    <div className="space-y-6 md:space-y-8 pb-10">
       {/* Header & Tabs */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Ventas</h1>
-          <p className="text-white/50 mt-1 text-[16px]">Gestiona tus ventas de forma profesional.</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-1">
+          <h1 className="text-3xl md:text-4xl font-black tracking-tighter uppercase italic">Ventas</h1>
+          <p className="text-white/40 text-sm font-medium">Registro y control de transacciones</p>
         </div>
-        <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
+        <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10">
           <button 
             onClick={() => setActiveTab('new')}
             className={cn(
-              "px-4 py-2 rounded-lg text-[15px] font-bold transition-all flex items-center gap-2",
-              activeTab === 'new' ? "bg-orange-500 text-black shadow-lg" : "text-white/40 hover:text-white"
+              "px-6 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 uppercase tracking-widest",
+              activeTab === 'new' ? "bg-orange-500 text-black shadow-[0_0_15px_rgba(249,115,22,0.3)]" : "text-white/40 hover:text-white"
             )}
           >
             <Plus className="w-4 h-4" />
-            Nueva Venta
+            Nueva
           </button>
           <button 
             onClick={() => setActiveTab('history')}
             className={cn(
-              "px-4 py-2 rounded-lg text-[15px] font-bold transition-all flex items-center gap-2",
-              activeTab === 'history' ? "bg-orange-500 text-black shadow-lg" : "text-white/40 hover:text-white"
+              "px-6 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 uppercase tracking-widest",
+              activeTab === 'history' ? "bg-orange-500 text-black shadow-[0_0_15px_rgba(249,115,22,0.3)]" : "text-white/40 hover:text-white"
             )}
           >
             <CheckCircle2 className="w-4 h-4" />
@@ -190,58 +192,64 @@ export default function Sales({ data, onUpdate }: SalesProps) {
       {activeTab === 'new' ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8 h-full">
           {/* Product Selection */}
-          <div className="lg:col-span-2 space-y-4 md:space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
-              <div className="flex flex-col md:flex-row gap-2 w-full">
+          <div className="lg:col-span-2 space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex flex-col md:flex-row gap-3 w-full">
                 <div className="relative flex-1">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-white/20" />
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
                   <input 
                     type="text" 
                     placeholder="Buscar producto..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-black border border-white/5 rounded-xl py-2 md:py-2.5 pl-11 md:pl-12 pr-4 focus:outline-none focus:border-orange-500/50 transition-colors text-[16px] md:text-base"
+                    className="w-full bg-black border border-white/5 rounded-2xl py-3 pl-12 pr-4 focus:outline-none focus:border-orange-500/50 transition-colors text-sm font-medium"
                   />
                 </div>
-                <select 
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="bg-black border border-white/5 rounded-xl py-2 md:py-2.5 px-4 focus:outline-none focus:border-orange-500/50 text-[15px] md:text-[16px] text-white/60 hover:text-white transition-colors appearance-none pr-8 text-white"
-                >
-                  <option value="Todas" className="bg-black text-white">Todas las Categorías</option>
-                  {productCategories.map(cat => (
-                    <option key={cat} value={cat} className="bg-black text-white">{cat}</option>
+                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                  {['Todas', ...productCategories].map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => setSelectedCategory(cat)}
+                      className={cn(
+                        "px-4 py-2 rounded-xl border text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                        selectedCategory === cat 
+                          ? "bg-orange-500/10 border-orange-500/50 text-orange-500" 
+                          : "bg-black border-white/10 text-white/40 hover:text-white"
+                      )}
+                    >
+                      {cat}
+                    </button>
                   ))}
-                </select>
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 max-h-[calc(100vh-320px)] overflow-y-auto pr-1 md:pr-2 custom-scrollbar">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[calc(100vh-350px)] overflow-y-auto pr-1 custom-scrollbar">
               {filteredProducts.map(product => (
-                <div key={product.id} className="bg-black p-4 md:p-5 rounded-xl md:rounded-2xl border border-white/5 space-y-3 md:space-y-4 hover:border-white/10 transition-all">
+                <div key={product.id} className="bg-black p-5 rounded-[2rem] border border-white/5 space-y-4 hover:border-orange-500/20 transition-all group">
                   <div className="flex items-start justify-between">
                     <div>
-                      <h3 className="font-bold text-base md:text-lg">{product.name}</h3>
-                      <p className="text-[15px] md:text-[15px] text-white/40">{product.category} • {product.design}</p>
+                      <h3 className="font-black text-lg uppercase italic tracking-tighter group-hover:text-orange-500 transition-colors">{product.name}</h3>
+                      <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">{product.category} • {product.design}</p>
                     </div>
-                    <span className="text-orange-500 font-bold text-[16px] md:text-base">{formatCurrency(product.price)}</span>
+                    <span className="text-orange-500 font-black text-lg tracking-tighter">{formatCurrency(product.price)}</span>
                   </div>
                   
-                  <div className="flex flex-wrap gap-1.5 md:gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {product.variants.map(variant => (
                       <button
                         key={variant.id}
                         disabled={variant.stock <= 0}
                         onClick={() => addToCart(product, variant)}
                         className={cn(
-                          "flex flex-col items-center gap-0.5 md:gap-1 px-2 md:px-3 py-1.5 md:py-2 rounded-lg md:rounded-xl border transition-all min-w-[50px] md:min-w-[60px]",
+                          "flex flex-col items-center gap-1 px-4 py-2.5 rounded-2xl border transition-all min-w-[65px]",
                           variant.stock <= 0 
-                            ? "bg-black border-white/5 opacity-30 cursor-not-allowed" 
-                            : "bg-black border-white/10 hover:border-orange-500/50 hover:bg-orange-500/5"
+                            ? "bg-black border-white/5 opacity-20 cursor-not-allowed" 
+                            : "bg-white/5 border-white/10 hover:border-orange-500/50 hover:bg-orange-500/10"
                         )}
                       >
-                        <span className="text-[15px] md:text-[15px] font-bold">{variant.size}</span>
-                        <span className="text-[15px] md:text-[15px] text-white/40">{variant.stock} u.</span>
+                        <span className="text-xs font-black uppercase tracking-widest">{variant.size}</span>
+                        <span className="text-[9px] font-black text-white/30">{variant.stock} U.</span>
                       </button>
                     ))}
                   </div>
@@ -402,9 +410,9 @@ export default function Sales({ data, onUpdate }: SalesProps) {
           </div>
         </div>
       ) : (
-        <div className="bg-black rounded-3xl border border-white/5 shadow-2xl overflow-hidden">
-          <div className="p-6 border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex flex-col md:flex-row gap-3 w-full">
+        <div className="bg-black rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden">
+          <div className="p-6 border-b border-white/5 flex flex-col gap-6">
+            <div className="flex flex-col md:flex-row gap-4 w-full">
               <div className="relative flex-1">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
                 <input 
@@ -412,24 +420,72 @@ export default function Sales({ data, onUpdate }: SalesProps) {
                   placeholder="Buscar en historial..."
                   value={historySearchTerm}
                   onChange={(e) => setHistorySearchTerm(e.target.value)}
-                  className="w-full bg-white/5 border border-white/5 rounded-xl py-2 pl-11 pr-4 focus:outline-none focus:border-orange-500/50 transition-colors text-[15px]"
+                  className="w-full bg-white/5 border border-white/5 rounded-2xl py-3 pl-12 pr-4 focus:outline-none focus:border-orange-500/50 transition-colors text-sm font-medium"
                 />
               </div>
-              <select 
-                value={historyPaymentMethod}
-                onChange={(e) => setHistoryPaymentMethod(e.target.value)}
-                className="bg-white/5 border border-white/5 rounded-xl py-2 px-4 focus:outline-none focus:border-orange-500/50 text-[15px] text-white/60 hover:text-white transition-colors"
-              >
-                <option value="Todos">Todos los Métodos</option>
-                <option value="Efectivo">Efectivo</option>
-                <option value="Transferencia">Transferencia</option>
-                <option value="Yape">Yape</option>
-                <option value="Plin">Plin</option>
-              </select>
+              <div className="flex gap-2 overflow-x-auto no-scrollbar">
+                {['Todos', 'Efectivo', 'Transferencia', 'Yape', 'Plin'].map(method => (
+                  <button
+                    key={method}
+                    onClick={() => setHistoryPaymentMethod(method)}
+                    className={cn(
+                      "px-4 py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                      historyPaymentMethod === method 
+                        ? "bg-orange-500/10 border-orange-500/50 text-orange-500" 
+                        : "bg-black border-white/10 text-white/40 hover:text-white"
+                    )}
+                  >
+                    {method}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="md:hidden divide-y divide-white/5">
+            {filteredSales.map((sale) => (
+              <div key={sale.id} className="p-5 space-y-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-1">
+                      {format(new Date(sale.date), "d MMM, HH:mm", { locale: es })}
+                    </p>
+                    <h4 className="font-black text-lg uppercase italic tracking-tighter leading-tight">{sale.productName}</h4>
+                    <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mt-1">{sale.size} • {sale.color}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xl font-black text-orange-500 tracking-tighter">{formatCurrency(sale.total)}</p>
+                    <span className={cn(
+                      "inline-block px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest mt-1",
+                      sale.paymentMethod === 'Efectivo' ? "bg-green-500/10 text-green-500" :
+                      sale.paymentMethod === 'Transferencia' ? "bg-blue-500/10 text-blue-500" :
+                      "bg-purple-500/10 text-purple-500"
+                    )}>
+                      {sale.paymentMethod}
+                    </span>
+                  </div>
+                </div>
+                {sale.notes && (
+                  <p className="text-[11px] text-white/30 italic bg-white/[0.02] p-2 rounded-lg border border-white/5">{sale.notes}</p>
+                )}
+                <div className="flex justify-end">
+                  <button 
+                    onClick={() => setSaleToDelete(sale)}
+                    className="p-2 hover:bg-red-500/10 text-white/20 hover:text-red-500 rounded-lg transition-all"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+            {filteredSales.length === 0 && (
+              <div className="p-20 text-center text-white/20 text-sm font-black uppercase tracking-[0.2em]">
+                Sin registros
+              </div>
+            )}
+          </div>
+
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left">
               <thead>
                 <tr className="text-[13px] uppercase tracking-wider text-white/40 border-b border-white/5">

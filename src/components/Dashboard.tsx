@@ -5,7 +5,9 @@ import {
   DollarSign, 
   AlertTriangle,
   Package,
-  Calendar
+  Calendar,
+  Target,
+  CheckCircle2
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -19,10 +21,11 @@ import {
   Bar,
   Cell
 } from 'recharts';
-import { AppState } from '../types';
+import { AppState, Goal } from '../types';
 import { formatCurrency, cn } from '../lib/utils';
-import { startOfDay, subDays, format, isSameDay, isWithinInterval, endOfDay, subMonths } from 'date-fns';
+import { startOfDay, subDays, format, isSameDay, isWithinInterval, endOfDay, subMonths, isBefore, isAfter } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { motion } from 'motion/react';
 
 interface DashboardProps {
   data: AppState;
@@ -32,9 +35,42 @@ export default function Dashboard({ data }: DashboardProps) {
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '6m' | '12m' | 'custom'>('30d');
   const [startDate, setStartDate] = useState(subDays(new Date(), 30));
   const [endDate, setEndDate] = useState(new Date());
+  const [showCustomDates, setShowCustomDates] = useState(false);
 
-  const handleRangeChange = (range: '7d' | '30d' | '6m' | '12m') => {
+  // Calculate goals progress
+  const activeGoals = data.goals.filter(g => isBefore(new Date(), endOfDay(new Date(g.endDate))));
+  
+  const goalsWithProgress = activeGoals.map(goal => {
+    const start = startOfDay(new Date(goal.startDate));
+    const end = endOfDay(new Date(goal.endDate));
+    
+    let current = 0;
+    if (goal.type === 'sales') {
+      current = data.sales
+        .filter(s => isWithinInterval(new Date(s.date), { start, end }))
+        .reduce((acc, s) => acc + s.total, 0);
+    } else if (goal.type === 'profit') {
+      const sales = data.sales
+        .filter(s => isWithinInterval(new Date(s.date), { start, end }))
+        .reduce((acc, s) => acc + (s.total - (s.cost * s.quantity)), 0);
+      const incomes = data.incomes
+        .filter(i => isWithinInterval(new Date(i.date), { start, end }))
+        .reduce((acc, i) => acc + i.amount, 0);
+      const expenses = data.expenses
+        .filter(e => isWithinInterval(new Date(e.date), { start, end }))
+        .reduce((acc, e) => acc + e.amount, 0);
+      current = sales + incomes - expenses;
+    }
+    return { ...goal, currentAmount: current };
+  });
+
+  const handleRangeChange = (range: '7d' | '30d' | '6m' | '12m' | 'custom') => {
     setTimeRange(range);
+    if (range === 'custom') {
+      setShowCustomDates(true);
+      return;
+    }
+    setShowCustomDates(false);
     const end = new Date();
     let start = new Date();
     if (range === '7d') start = subDays(end, 7);
@@ -104,120 +140,105 @@ export default function Dashboard({ data }: DashboardProps) {
   const COLORS = ['#F97316', '#FB923C', '#FDBA74', '#FED7AA', '#FFEDD5'];
 
   return (
-    <div className="space-y-4 md:space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Panel de Control</h1>
-          <p className="text-white/50 text-[15px] md:text-[16px] mt-0.5 md:mt-1">Bienvenido de nuevo. Aquí está el resumen de tu negocio.</p>
+    <div className="space-y-6 md:space-y-8 pb-10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-1">
+          <h1 className="text-3xl md:text-4xl font-black tracking-tighter uppercase italic">Panel</h1>
+          <p className="text-white/40 text-sm font-medium">Resumen de rendimiento de tu marca</p>
         </div>
         
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-          <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
-            {(['7d', '30d', '6m', '12m'] as const).map((range) => (
+        <div className="flex flex-col gap-4 w-full md:w-auto">
+          <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10 overflow-x-auto no-scrollbar">
+            {(['7d', '30d', '6m', '12m', 'custom'] as const).map((range) => (
               <button 
                 key={range}
                 onClick={() => handleRangeChange(range)}
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-[15px] md:text-[15px] font-bold transition-all uppercase",
-                  timeRange === range ? "bg-orange-500 text-black" : "text-white/40 hover:text-white"
+                  "px-4 py-2 rounded-xl text-xs font-black transition-all uppercase whitespace-nowrap",
+                  timeRange === range ? "bg-orange-500 text-black shadow-[0_0_15px_rgba(249,115,22,0.3)]" : "text-white/40 hover:text-white"
                 )}
               >
-                {range}
+                {range === 'custom' ? 'Personalizado' : range}
               </button>
             ))}
-            <button 
-              onClick={() => setTimeRange('custom')}
-              className={cn(
-                "px-3 py-1.5 rounded-lg text-[15px] md:text-[15px] font-bold transition-all uppercase",
-                timeRange === 'custom' ? "bg-orange-500 text-black" : "text-white/40 hover:text-white"
-              )}
+          </div>
+
+          {showCustomDates && (
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-2 bg-white/5 p-2 rounded-2xl border border-white/10"
             >
-              Personalizado
-            </button>
-          </div>
-          
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-xl border border-white/10">
-            <Calendar className="w-6 h-6 text-orange-500" />
-            <div className="flex items-center gap-1">
-              <input 
-                type="date" 
-                value={format(startDate, 'yyyy-MM-dd')}
-                onChange={(e) => {
-                  const newDate = new Date(e.target.value);
-                  if (!isNaN(newDate.getTime())) {
-                    setStartDate(newDate);
-                    setTimeRange('custom');
-                  }
-                }}
-                className="bg-transparent text-[15px] md:text-[15px] font-medium focus:outline-none text-white/60 hover:text-white transition-colors"
-              />
-              <span className="text-white/20">-</span>
-              <input 
-                type="date" 
-                value={format(endDate, 'yyyy-MM-dd')}
-                onChange={(e) => {
-                  const newDate = new Date(e.target.value);
-                  if (!isNaN(newDate.getTime())) {
-                    setEndDate(newDate);
-                    setTimeRange('custom');
-                  }
-                }}
-                className="bg-transparent text-[15px] md:text-[15px] font-medium focus:outline-none text-white/60 hover:text-white transition-colors"
-              />
-            </div>
-          </div>
+              <div className="relative flex-1">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-orange-500" />
+                <input 
+                  type="date" 
+                  value={format(startDate, 'yyyy-MM-dd')}
+                  onChange={(e) => setStartDate(new Date(e.target.value))}
+                  className="w-full bg-black border border-white/5 rounded-xl py-1.5 pl-9 pr-2 text-[10px] font-black uppercase text-white focus:outline-none focus:border-orange-500/50"
+                />
+              </div>
+              <span className="text-white/20 font-black text-[10px]">A</span>
+              <div className="relative flex-1">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-orange-500" />
+                <input 
+                  type="date" 
+                  value={format(endDate, 'yyyy-MM-dd')}
+                  onChange={(e) => setEndDate(new Date(e.target.value))}
+                  className="w-full bg-black border border-white/5 rounded-xl py-1.5 pl-9 pr-2 text-[10px] font-black uppercase text-white focus:outline-none focus:border-orange-500/50"
+                />
+              </div>
+            </motion.div>
+          )}
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
         <StatCard 
-          title="Ventas del Día" 
-          value={formatCurrency(todayRevenue)} 
+          title="Ingresos" 
+          value={formatCurrency(totalRevenue)} 
           icon={TrendingUp} 
-          trend="+12%" 
+          trend="Total del periodo" 
           color="orange"
+          description="Ventas + Otros ingresos"
         />
         <StatCard 
-          title="Ganancia Bruta" 
-          value={formatCurrency(grossProfit)} 
-          icon={DollarSign} 
-          trend="+5.4%" 
-          color="green"
-        />
-        <StatCard 
-          title="Costo de Ventas" 
-          value={formatCurrency(totalCogs)} 
+          title="Gastos" 
+          value={formatCurrency(totalExpenses + totalCogs)} 
           icon={TrendingDown} 
-          trend="-2.1%" 
+          trend="Total del periodo" 
           color="red"
+          description="Costos + Gastos operativos"
         />
         <StatCard 
-          title="Ganancia Neta" 
+          title="Balance" 
           value={formatCurrency(netProfit)} 
-          icon={TrendingUp} 
-          trend="+8.2%" 
-          color="blue"
+          icon={DollarSign} 
+          trend={netProfit >= 0 ? "Ganancia neta" : "Pérdida neta"} 
+          color={netProfit >= 0 ? "green" : "red"}
+          description="Resultado final"
+          isMain
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8">
         {/* Main Chart */}
-        <div className="lg:col-span-2 bg-black p-4 md:p-6 rounded-2xl border border-white/5 shadow-xl">
-          <div className="flex items-center justify-between mb-4 md:mb-8">
-            <h3 className="text-base md:text-lg font-semibold">Rendimiento {timeRange === '7d' ? 'Semanal' : 'del Periodo'}</h3>
-            <div className="flex items-center gap-3 md:gap-4 text-[15px] md:text-[15px]">
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-                <span className="text-white/60">Ventas</span>
+        <div className="lg:col-span-2 bg-black p-5 md:p-8 rounded-[2.5rem] border border-white/5 shadow-2xl">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+            <h3 className="text-lg font-black uppercase tracking-tight italic">Rendimiento</h3>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]"></div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Ventas</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-white/20"></div>
-                <span className="text-white/60">Gastos</span>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-white/20"></div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Gastos</span>
               </div>
             </div>
           </div>
-          <div className="h-[300px] w-full">
+          <div className="h-[250px] md:h-[350px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData}>
                 <defs>
@@ -231,31 +252,40 @@ export default function Dashboard({ data }: DashboardProps) {
                   dataKey="name" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: '#ffffff40', fontSize: 15 }}
+                  tick={{ fill: '#ffffff20', fontSize: 10, fontWeight: 700 }}
                   dy={10}
+                  interval={daysCount > 7 ? 4 : 0}
                 />
                 <YAxis 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: '#ffffff40', fontSize: 15 }}
+                  tick={{ fill: '#ffffff20', fontSize: 10, fontWeight: 700 }}
                   tickFormatter={(value) => `S/${value}`}
+                  width={40}
                 />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#1A1A1A', border: '1px solid #ffffff10', borderRadius: '12px' }}
+                  contentStyle={{ 
+                    backgroundColor: '#000', 
+                    border: '1px solid rgba(255,255,255,0.1)', 
+                    borderRadius: '16px',
+                    fontSize: '12px',
+                    fontWeight: 'bold'
+                  }}
                   itemStyle={{ color: '#fff' }}
                 />
                 <Area 
                   type="monotone" 
                   dataKey="ventas" 
                   stroke="#F97316" 
-                  strokeWidth={3}
+                  strokeWidth={4}
                   fillOpacity={1} 
                   fill="url(#colorSales)" 
+                  animationDuration={1500}
                 />
                 <Area 
                   type="monotone" 
                   dataKey="gastos" 
-                  stroke="#ffffff20" 
+                  stroke="#ffffff10" 
                   strokeWidth={2}
                   fill="transparent" 
                 />
@@ -295,7 +325,56 @@ export default function Dashboard({ data }: DashboardProps) {
       </div>
 
       {/* Alerts & Recent */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8">
+        {/* Goals Widget */}
+        <div className="bg-black p-4 md:p-6 rounded-2xl border border-white/5 shadow-xl">
+          <div className="flex items-center justify-between mb-4 md:mb-6">
+            <h3 className="text-base md:text-lg font-semibold flex items-center gap-2">
+              <Target className="w-4 h-4 md:w-5 h-5 text-orange-500" />
+              Metas Activas
+            </h3>
+            <button 
+              onClick={() => window.dispatchEvent(new CustomEvent('change-view', { detail: 'goals' }))}
+              className="text-[14px] font-bold text-orange-500 hover:text-orange-400 transition-colors"
+            >
+              Ver todas
+            </button>
+          </div>
+          <div className="space-y-4">
+            {goalsWithProgress.length > 0 ? (
+              goalsWithProgress.slice(0, 3).map(goal => {
+                const progress = Math.min(Math.round((goal.currentAmount / goal.targetAmount) * 100), 100);
+                return (
+                  <div key={goal.id} className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="font-medium text-white/80">{goal.title}</span>
+                      <span className="text-orange-500 font-bold">{progress}%</span>
+                    </div>
+                    <div className="h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progress}%` }}
+                        className={cn(
+                          "h-full rounded-full transition-all duration-1000",
+                          progress >= 100 ? "bg-green-500" : "bg-orange-500"
+                        )}
+                      />
+                    </div>
+                    <div className="flex justify-between text-[10px] text-white/40 uppercase tracking-widest font-bold">
+                      <span>{formatCurrency(goal.currentAmount)}</span>
+                      <span>Meta: {formatCurrency(goal.targetAmount)}</span>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="text-center py-8 text-white/20 italic">
+                No hay metas activas.
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="bg-black p-4 md:p-6 rounded-2xl border border-white/5 shadow-xl">
           <div className="flex items-center justify-between mb-4 md:mb-6">
             <h3 className="text-base md:text-lg font-semibold flex items-center gap-2">
@@ -306,7 +385,7 @@ export default function Dashboard({ data }: DashboardProps) {
           </div>
           <div className="space-y-3 md:space-y-4">
             {lowStockProducts.length > 0 ? (
-              lowStockProducts.map(product => (
+              lowStockProducts.slice(0, 3).map(product => (
                 <div key={product.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-orange-500/10 rounded-lg flex items-center justify-center">
@@ -344,7 +423,7 @@ export default function Dashboard({ data }: DashboardProps) {
             </button>
           </div>
           <div className="space-y-3 md:space-y-4">
-            {data.sales.slice(-5).reverse().map(sale => (
+            {data.sales.slice(-3).reverse().map(sale => (
               <div key={sale.id} className="flex items-center justify-between p-3 hover:bg-white/5 rounded-xl transition-colors border border-transparent hover:border-white/5">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-white/5 rounded-lg flex items-center justify-center text-xs font-bold border border-white/10">
@@ -384,26 +463,60 @@ export default function Dashboard({ data }: DashboardProps) {
   );
 }
 
-function StatCard({ title, value, icon: Icon, trend, color }: any) {
+function StatCard({ title, value, icon: Icon, trend, color, description, isMain }: any) {
   const colorClasses: any = {
-    orange: "bg-orange-500/10 text-orange-500",
-    green: "bg-green-500/10 text-green-500",
-    red: "bg-red-500/10 text-red-500",
-    blue: "bg-blue-500/10 text-blue-500",
+    orange: "text-orange-500 bg-orange-500/10 border-orange-500/20",
+    green: "text-green-500 bg-green-500/10 border-green-500/20",
+    red: "text-red-500 bg-red-500/10 border-red-500/20",
+    blue: "text-blue-500 bg-blue-500/10 border-blue-500/20",
   };
 
   return (
-    <div className="bg-black p-4 md:p-6 rounded-2xl border border-white/5 shadow-xl hover:border-white/10 transition-all group">
-      <div className="flex items-center justify-between mb-3 md:mb-4">
-        <div className={cn("p-2 md:p-2.5 rounded-xl", colorClasses[color])}>
-          <Icon className="w-4 h-4 md:w-5 h-5" />
+    <div className={cn(
+      "p-6 md:p-8 rounded-[2.5rem] border transition-all group relative overflow-hidden",
+      isMain ? "bg-orange-500 border-orange-400" : "bg-black border-white/5 hover:border-white/10"
+    )}>
+      <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+        <Icon className={cn("w-20 h-20", isMain ? "text-black" : "text-white")} />
+      </div>
+      
+      <div className="flex items-center justify-between mb-6">
+        <div className={cn(
+          "p-3 rounded-2xl border", 
+          isMain ? "bg-black/20 border-black/10 text-black" : colorClasses[color]
+        )}>
+          <Icon className="w-6 h-6" />
         </div>
-        <span className={cn("text-[15px] md:text-[15px] font-bold px-2 py-0.5 md:py-1 rounded-full", colorClasses[color])}>
+        <span className={cn(
+          "text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest border",
+          isMain ? "bg-black/20 border-black/10 text-black" : colorClasses[color]
+        )}>
           {trend}
         </span>
       </div>
-      <p className="text-white/40 text-[15px] md:text-[16px] font-medium">{title}</p>
-      <h4 className="text-xl md:text-2xl font-bold mt-0.5 md:mt-1 group-hover:text-orange-500 transition-colors">{value}</h4>
+
+      <div className="space-y-1">
+        <p className={cn(
+          "text-[11px] font-black uppercase tracking-[0.2em]",
+          isMain ? "text-black/60" : "text-white/30"
+        )}>
+          {title}
+        </p>
+        <h4 className={cn(
+          "text-3xl md:text-4xl font-black tracking-tighter",
+          isMain ? "text-black" : "text-white group-hover:text-orange-500 transition-colors"
+        )}>
+          {value}
+        </h4>
+        {description && (
+          <p className={cn(
+            "text-[10px] font-medium mt-2",
+            isMain ? "text-black/40" : "text-white/20"
+          )}>
+            {description}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

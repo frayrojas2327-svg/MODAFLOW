@@ -62,6 +62,7 @@ service cloud.firestore {
              (!('photoURL' in data) || data.photoURL == null || data.photoURL is string) &&
              (!('companyName' in data) || data.companyName is string) &&
              (!('role' in data) || data.role is string) &&
+             (!('createdAt' in data) || data.createdAt is string) &&
              (!('updatedAt' in data) || data.updatedAt is string);
     }
 

@@ -181,12 +181,12 @@ export default function AIAdvisor({ data }: AIAdvisorProps) {
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(true)}
         className={cn(
-          "fixed bottom-6 right-6 z-[100] w-14 h-14 md:w-16 md:h-16 bg-orange-500 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(249,115,22,0.4)] border-2 border-white/20 transition-all",
+          "fixed bottom-24 right-4 md:bottom-6 md:right-6 z-[100] w-12 h-12 md:w-16 md:h-16 bg-orange-500 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(249,115,22,0.4)] border-2 border-white/20 transition-all",
           isOpen && "scale-0 opacity-0 pointer-events-none"
         )}
       >
-        <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-black" />
-        <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-black animate-pulse" />
+        <Sparkles className="w-5 h-5 md:w-8 md:h-8 text-black" />
+        <div className="absolute -top-0.5 -right-0.5 w-3 h-3 md:w-4 md:h-4 bg-green-500 rounded-full border-2 border-black animate-pulse" />
       </motion.button>
 
       {/* Chat Window */}

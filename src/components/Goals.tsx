@@ -153,6 +153,13 @@ export default function Goals({ data, onUpdate }: GoalsProps) {
     return Math.max(days, 0);
   };
 
+  const getDailyPace = (goal: Goal) => {
+    const daysLeft = getRemainingDays(goal.endDate);
+    const remainingAmount = Math.max(goal.targetAmount - goal.currentAmount, 0);
+    if (daysLeft <= 0) return remainingAmount;
+    return remainingAmount / daysLeft;
+  };
+
   const chartData = useMemo(() => {
     return activeGoals.map(g => ({
       name: g.title,
@@ -162,77 +169,50 @@ export default function Goals({ data, onUpdate }: GoalsProps) {
   }, [activeGoals]);
 
   return (
-    <div className="space-y-6 md:space-y-8">
+    <div className="space-y-6 md:space-y-8 pb-10">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl md:text-3xl font-bold tracking-tight">Metas y Proyecciones</h1>
-          <p className="text-white/50 mt-0.5 text-[15px] md:text-[16px]">Planifica el crecimiento de tu marca con objetivos claros.</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-1">
+          <h1 className="text-3xl md:text-4xl font-black tracking-tighter uppercase italic">Metas</h1>
+          <p className="text-white/40 text-sm font-medium">Objetivos y proyecciones de crecimiento</p>
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center justify-center gap-2 px-4 md:px-6 py-2 md:py-2.5 bg-orange-500 hover:bg-orange-600 text-black rounded-xl transition-all font-bold shadow-[0_0_20px_rgba(249,115,22,0.3)] text-[16px] md:text-base"
+          className="flex items-center justify-center gap-2 px-6 py-3 bg-orange-500 hover:bg-orange-600 text-black rounded-2xl transition-all font-black shadow-[0_0_20px_rgba(249,115,22,0.3)] text-xs uppercase tracking-widest"
         >
-          <Plus className="w-4 h-4 md:w-5 md:h-5" />
+          <Plus className="w-4 h-4" />
           Nueva Meta
         </button>
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-black border border-white/5 p-6 rounded-2xl relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-            <Target className="w-16 h-16" />
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
+        <div className="bg-black border border-white/5 p-4 md:p-6 rounded-3xl relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-2 opacity-5 group-hover:opacity-10 transition-opacity">
+            <Target className="w-12 h-12" />
           </div>
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-orange-500/10 rounded-lg">
-              <Target className="w-5 h-5 text-orange-500" />
-            </div>
-            <span className="text-white/40 font-bold uppercase tracking-widest text-xs">Metas Activas</span>
-          </div>
-          <p className="text-4xl font-black">{activeGoals.length}</p>
-          <div className="mt-4 flex items-center gap-1 text-xs text-white/20">
-            <Calendar className="w-3 h-3" />
-            <span>Actualizado hoy</span>
-          </div>
+          <p className="text-white/20 text-[10px] font-black uppercase tracking-widest mb-1">Activas</p>
+          <p className="text-2xl md:text-4xl font-black">{activeGoals.length}</p>
         </div>
 
-        <div className="bg-black border border-white/5 p-6 rounded-2xl relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-            <CheckCircle2 className="w-16 h-16" />
+        <div className="bg-black border border-white/5 p-4 md:p-6 rounded-3xl relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-2 opacity-5 group-hover:opacity-10 transition-opacity">
+            <CheckCircle2 className="w-12 h-12" />
           </div>
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-green-500/10 rounded-lg">
-              <CheckCircle2 className="w-5 h-5 text-green-500" />
-            </div>
-            <span className="text-white/40 font-bold uppercase tracking-widest text-xs">Completadas</span>
-          </div>
-          <p className="text-4xl font-black">{completedGoals.length}</p>
-          <div className="mt-4 flex items-center gap-1 text-xs text-green-500/40">
-            <TrendingUp className="w-3 h-3" />
-            <span>Buen trabajo</span>
-          </div>
+          <p className="text-white/20 text-[10px] font-black uppercase tracking-widest mb-1">Logradas</p>
+          <p className="text-2xl md:text-4xl font-black">{completedGoals.length}</p>
         </div>
 
-        <div className="bg-black border border-white/5 p-6 rounded-2xl relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-            <TrendingUp className="w-16 h-16" />
+        <div className="bg-black border border-white/5 p-4 md:p-6 rounded-3xl relative overflow-hidden group col-span-2 md:col-span-1">
+          <div className="absolute top-0 right-0 p-2 opacity-5 group-hover:opacity-10 transition-opacity">
+            <TrendingUp className="w-12 h-12" />
           </div>
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-blue-500/10 rounded-lg">
-              <TrendingUp className="w-5 h-5 text-blue-500" />
-            </div>
-            <span className="text-white/40 font-bold uppercase tracking-widest text-xs">Progreso Global</span>
-          </div>
-          <p className="text-4xl font-black">
+          <p className="text-white/20 text-[10px] font-black uppercase tracking-widest mb-1">Progreso</p>
+          <p className="text-2xl md:text-4xl font-black">
             {activeGoals.length > 0 
               ? Math.round(activeGoals.reduce((acc, g) => acc + calculateProgress(g.currentAmount, g.targetAmount), 0) / activeGoals.length)
               : 0}%
           </p>
-          <div className="mt-4 flex items-center gap-1 text-xs text-blue-500/40">
-            <ArrowUpRight className="w-3 h-3" />
-            <span>En crecimiento</span>
-          </div>
         </div>
       </div>
 
@@ -299,6 +279,7 @@ export default function Goals({ data, onUpdate }: GoalsProps) {
             {activeGoals.map(goal => {
               const progress = calculateProgress(goal.currentAmount, goal.targetAmount);
               const daysLeft = getRemainingDays(goal.endDate);
+              const dailyPace = getDailyPace(goal);
               const isCompleted = progress >= 100;
               
               return (
@@ -310,11 +291,15 @@ export default function Goals({ data, onUpdate }: GoalsProps) {
                   className="bg-black border border-white/5 rounded-3xl p-6 md:p-8 space-y-8 group hover:border-orange-500/30 transition-all relative overflow-hidden"
                 >
                   {isCompleted && (
-                    <div className="absolute top-0 right-0 p-4">
-                      <div className="bg-green-500/20 text-green-500 p-2 rounded-full">
+                    <motion.div 
+                      initial={{ scale: 0, rotate: -20 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      className="absolute top-0 right-0 p-4 z-10"
+                    >
+                      <div className="bg-green-500 text-black p-2 rounded-full shadow-[0_0_20px_rgba(34,197,94,0.6)]">
                         <CheckCircle2 className="w-6 h-6" />
                       </div>
-                    </div>
+                    </motion.div>
                   )}
 
                   <div className="flex justify-between items-start">
@@ -355,15 +340,24 @@ export default function Goals({ data, onUpdate }: GoalsProps) {
                       </div>
                     </div>
                     
-                    <div className="relative h-4 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                    <div className="relative h-5 bg-white/5 rounded-full overflow-hidden border border-white/5 p-1">
                       <motion.div 
                         initial={{ width: 0 }}
                         animate={{ width: `${progress}%` }}
                         className={cn(
-                          "h-full rounded-full transition-all duration-1000",
+                          "h-full rounded-full transition-all duration-1000 relative",
                           isCompleted ? "bg-green-500 shadow-[0_0_20px_rgba(34,197,94,0.4)]" : "bg-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.4)]"
                         )}
-                      />
+                      >
+                        {progress > 10 && (
+                          <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 1 }}
+                            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"
+                          />
+                        )}
+                      </motion.div>
                     </div>
                     <div className="flex justify-between text-[11px] font-black uppercase tracking-widest">
                       <span className={isCompleted ? "text-green-500" : "text-orange-500"}>{progress}% Completado</span>
@@ -371,7 +365,18 @@ export default function Goals({ data, onUpdate }: GoalsProps) {
                     </div>
                   </div>
 
-                  <div className="pt-6 border-t border-white/5 flex items-center justify-between">
+                  <div className="pt-6 border-t border-white/5 grid grid-cols-2 gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center">
+                        <TrendingUp className="w-5 h-5 text-orange-500" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-white/20 font-black uppercase tracking-widest">Ritmo Diario</p>
+                        <p className="font-bold text-sm">
+                          {isCompleted ? '¡Meta lograda!' : `${formatCurrency(dailyPace)} / día`}
+                        </p>
+                      </div>
+                    </div>
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center">
                         <AlertCircle className="w-5 h-5 text-white/20" />
@@ -379,21 +384,29 @@ export default function Goals({ data, onUpdate }: GoalsProps) {
                       <div>
                         <p className="text-[10px] text-white/20 font-black uppercase tracking-widest">Tiempo Restante</p>
                         <p className="font-bold text-sm">
-                          {daysLeft > 0 ? `${daysLeft} días para el cierre` : '¡Hoy es el último día!'}
+                          {daysLeft > 0 ? `${daysLeft} días` : '¡Último día!'}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-xl border border-white/5">
-                      {progress > 50 ? (
-                        <ArrowUpRight className="w-4 h-4 text-green-500" />
-                      ) : (
-                        <ArrowDownRight className="w-4 h-4 text-orange-500" />
-                      )}
-                      <span className="text-xs font-bold uppercase tracking-widest">
-                        {progress > 80 ? 'Excelente' : progress > 50 ? 'Buen Ritmo' : 'Acelerar'}
-                      </span>
-                    </div>
                   </div>
+
+                  {!isCompleted && (
+                    <div className="bg-orange-500/5 border border-orange-500/10 rounded-2xl p-4 flex items-center gap-3">
+                      <div className={cn(
+                        "p-2 rounded-lg",
+                        progress > 50 ? "bg-green-500/10 text-green-500" : "bg-orange-500/10 text-orange-500"
+                      )}>
+                        {progress > 50 ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+                      </div>
+                      <p className="text-xs font-medium text-white/60 leading-relaxed">
+                        {progress > 80 
+                          ? "¡Casi lo logras! Mantén el ritmo para cerrar con éxito." 
+                          : progress > 50 
+                          ? "Vas por buen camino. Sigue así para alcanzar tu objetivo."
+                          : `Necesitas vender ${formatCurrency(dailyPace)} diarios para llegar a la meta.`}
+                      </p>
+                    </div>
+                  )}
                 </motion.div>
               );
             })}

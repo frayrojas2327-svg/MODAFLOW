@@ -11,20 +11,25 @@ import {
   X,
   AlertTriangle,
   RefreshCcw,
-  Sparkles
+  Sparkles,
+  Smartphone,
+  Download
 } from 'lucide-react';
 import { AppState, UserSettings } from '../types';
 import { firebaseService } from '../services/firebaseService';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'motion/react';
+import { GoogleGenAI } from "@google/genai";
+import OpenAI from "openai";
 
 interface SettingsProps {
   data: AppState;
   userProfile: any;
   onUpdate: () => void;
+  deferredPrompt?: any;
 }
 
-export default function Settings({ data, userProfile, onUpdate }: SettingsProps) {
+export default function Settings({ data, userProfile, onUpdate, deferredPrompt }: SettingsProps) {
   const [companyName, setCompanyName] = useState(userProfile?.companyName || '');
   const [productCategories, setProductCategories] = useState<string[]>(data.settings.productCategories || []);
   const [expenseCategories, setExpenseCategories] = useState<string[]>(data.settings.expenseCategories || []);
@@ -35,8 +40,54 @@ export default function Settings({ data, userProfile, onUpdate }: SettingsProps)
   const [geminiApiKey, setGeminiApiKey] = useState(data.settings.geminiApiKey || '');
   const [openaiApiKey, setOpenaiApiKey] = useState(data.settings.openaiApiKey || '');
   const [isSaving, setIsSaving] = useState(false);
+  const [isTestingGemini, setIsTestingGemini] = useState(false);
+  const [isTestingOpenai, setIsTestingOpenai] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+  const testGeminiKey = async () => {
+    if (!geminiApiKey.trim()) {
+      toast.error('Ingresa una clave para probar');
+      return;
+    }
+    setIsTestingGemini(true);
+    try {
+      const genAI = new GoogleGenAI({ apiKey: geminiApiKey.trim() });
+      const model = "gemini-3-flash-preview";
+      await genAI.models.generateContent({
+        model,
+        contents: [{ role: 'user', parts: [{ text: 'Hola' }] }],
+      });
+      toast.success('¡Conexión con Gemini exitosa!');
+    } catch (error: any) {
+      console.error('Gemini Test Error:', error);
+      toast.error('Error: La clave de Gemini no es válida o no hay conexión.');
+    } finally {
+      setIsTestingGemini(false);
+    }
+  };
+
+  const testOpenaiKey = async () => {
+    if (!openaiApiKey.trim()) {
+      toast.error('Ingresa una clave para probar');
+      return;
+    }
+    setIsTestingOpenai(true);
+    try {
+      const openai = new OpenAI({ apiKey: openaiApiKey.trim(), dangerouslyAllowBrowser: true });
+      await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: "Hola" }],
+        max_tokens: 5,
+      });
+      toast.success('¡Conexión con OpenAI exitosa!');
+    } catch (error: any) {
+      console.error('OpenAI Test Error:', error);
+      toast.error('Error: La clave de OpenAI no es válida o no hay conexión.');
+    } finally {
+      setIsTestingOpenai(false);
+    }
+  };
 
   // Sync state with props when they change (e.g., after loading from Firebase)
   useEffect(() => {
@@ -323,10 +374,19 @@ export default function Settings({ data, userProfile, onUpdate }: SettingsProps)
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="text-[15px] font-bold text-white/40 uppercase tracking-wider flex items-center gap-2">
-              Google Gemini API Key
-              <span className="text-[10px] bg-orange-500/10 text-orange-500 px-2 py-0.5 rounded-full">Recomendado</span>
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-[15px] font-bold text-white/40 uppercase tracking-wider flex items-center gap-2">
+                Google Gemini API Key
+                <span className="text-[10px] bg-orange-500/10 text-orange-500 px-2 py-0.5 rounded-full">Recomendado</span>
+              </label>
+              <button 
+                onClick={testGeminiKey}
+                disabled={isTestingGemini}
+                className="text-[11px] font-bold text-orange-500/60 hover:text-orange-500 flex items-center gap-1 transition-colors"
+              >
+                {isTestingGemini ? 'Probando...' : 'Probar Conexión'}
+              </button>
+            </div>
             <input 
               type="password" 
               value={geminiApiKey}
@@ -338,10 +398,19 @@ export default function Settings({ data, userProfile, onUpdate }: SettingsProps)
           </div>
           
           <div className="space-y-2">
-            <label className="text-[15px] font-bold text-white/40 uppercase tracking-wider flex items-center gap-2">
-              OpenAI ChatGPT API Key
-              <span className="text-[10px] bg-white/10 text-white/40 px-2 py-0.5 rounded-full">Opcional</span>
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-[15px] font-bold text-white/40 uppercase tracking-wider flex items-center gap-2">
+                OpenAI ChatGPT API Key
+                <span className="text-[10px] bg-white/10 text-white/40 px-2 py-0.5 rounded-full">Opcional</span>
+              </label>
+              <button 
+                onClick={testOpenaiKey}
+                disabled={isTestingOpenai}
+                className="text-[11px] font-bold text-white/20 hover:text-white flex items-center gap-1 transition-colors"
+              >
+                {isTestingOpenai ? 'Probando...' : 'Probar Conexión'}
+              </button>
+            </div>
             <input 
               type="password" 
               value={openaiApiKey}
@@ -357,6 +426,68 @@ export default function Settings({ data, userProfile, onUpdate }: SettingsProps)
           <p className="text-[13px] text-white/60 leading-relaxed">
             <span className="text-orange-500 font-bold">Nota:</span> Estas llaves se guardan de forma segura en tu perfil. La IA las usará para darte consejos personalizados sobre tu negocio. Si no las proporcionas, el sistema usará una llave predeterminada con límites de uso.
           </p>
+        </div>
+      </section>
+
+      {/* Mobile App Installation */}
+      <section className="bg-black p-6 rounded-2xl border border-white/5 shadow-xl space-y-6">
+        <div className="flex items-center gap-2 text-orange-500">
+          <Smartphone className="w-5 h-5" />
+          <h2 className="font-bold uppercase tracking-wider text-[15px]">Aplicación Móvil</h2>
+        </div>
+        
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 p-4 bg-orange-500/5 rounded-xl border border-orange-500/10">
+          <div className="space-y-2">
+            <h3 className="font-bold text-[16px]">Instalar ModaFlow en tu celular</h3>
+            <p className="text-[14px] text-white/50 leading-relaxed max-w-md">
+              Accede a tu negocio más rápido instalando la aplicación en tu pantalla de inicio. Funciona sin conexión y ocupa muy poco espacio.
+            </p>
+          </div>
+          
+          <div className="flex flex-col gap-3 min-w-[200px]">
+            {deferredPrompt ? (
+              <button 
+                onClick={async () => {
+                  deferredPrompt.prompt();
+                  const { outcome } = await deferredPrompt.userChoice;
+                  if (outcome === 'accepted') {
+                    toast.success('¡Gracias por instalar ModaFlow!');
+                  }
+                }}
+                className="flex items-center justify-center gap-2 px-6 py-3 bg-orange-500 hover:bg-orange-600 text-black rounded-xl transition-all font-bold text-[15px] shadow-lg shadow-orange-500/20"
+              >
+                <Download className="w-4 h-4" />
+                Instalar Ahora
+              </button>
+            ) : (
+              <div className="p-3 bg-white/5 rounded-xl border border-white/10 text-center">
+                <p className="text-[12px] text-white/40 font-medium">
+                  Para instalar: Toca <span className="text-orange-500 font-bold">Instalar</span> y luego <span className="text-orange-500 font-bold">"Añadir a pantalla de inicio"</span> en tu navegador.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="p-4 bg-white/5 rounded-xl border border-white/10 space-y-2">
+            <h4 className="font-bold text-[14px] flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full" />
+              Modo Offline
+            </h4>
+            <p className="text-[12px] text-white/40">
+              Registra ventas incluso sin internet. Los datos se sincronizarán automáticamente cuando recuperes la conexión.
+            </p>
+          </div>
+          <div className="p-4 bg-white/5 rounded-xl border border-white/10 space-y-2">
+            <h4 className="font-bold text-[14px] flex items-center gap-2">
+              <div className="w-2 h-2 bg-blue-500 rounded-full" />
+              Notificaciones
+            </h4>
+            <p className="text-[12px] text-white/40">
+              Recibe alertas sobre bajo stock y recordatorios de tus metas directamente en tu celular.
+            </p>
+          </div>
         </div>
       </section>
 

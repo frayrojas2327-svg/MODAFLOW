@@ -169,36 +169,29 @@ export default function Inventory({ data, onUpdate, recentlySold, setRecentlySol
   };
 
   return (
-    <div className="space-y-4 md:space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl md:text-3xl font-bold tracking-tight">Inventario</h1>
-          <p className="text-white/50 mt-0.5 text-[15px] md:text-[16px]">Gestiona tus productos, tallas y stock.</p>
+    <div className="space-y-6 md:space-y-8 pb-10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-1">
+          <h1 className="text-3xl md:text-4xl font-black tracking-tighter uppercase italic">Stock</h1>
+          <p className="text-white/40 text-sm font-medium">Gestión de productos y existencias</p>
         </div>
-        <div className="flex items-center gap-2 md:gap-3">
+        <div className="flex items-center gap-2">
           <button 
             onClick={() => setIsCategoryModalOpen(true)}
-            className="flex items-center gap-2 px-3 md:px-4 py-2 md:py-2.5 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-all text-xs md:text-sm font-medium"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 transition-all text-xs font-black uppercase tracking-widest"
           >
-            <Filter className="w-3.5 h-3.5 md:w-4 md:h-4" />
-            <span className="hidden xs:inline">Categorías</span>
-          </button>
-          <button 
-            onClick={handleExport}
-            className="flex items-center gap-2 px-3 md:px-4 py-2 md:py-2.5 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-all text-xs md:text-sm font-medium"
-          >
-            <Download className="w-3.5 h-3.5 md:w-4 md:h-4" />
-            <span className="hidden xs:inline">Exportar</span>
+            <Filter className="w-4 h-4" />
+            Categorías
           </button>
           <button 
             onClick={() => {
               setEditingProduct(null);
               setIsModalOpen(true);
             }}
-            className="flex items-center justify-center gap-2 px-4 md:px-6 py-2 md:py-2.5 bg-orange-500 hover:bg-orange-600 text-black rounded-xl transition-all font-bold shadow-[0_0_20px_rgba(249,115,22,0.3)] text-[16px] md:text-base"
+            className="flex-[1.5] flex items-center justify-center gap-2 px-6 py-3 bg-orange-500 hover:bg-orange-600 text-black rounded-2xl transition-all font-black shadow-[0_0_20px_rgba(249,115,22,0.3)] text-xs uppercase tracking-widest"
           >
-            <Plus className="w-4 h-4 md:w-5 md:h-5" />
-            Nuevo Producto
+            <Plus className="w-4 h-4" />
+            Nuevo
           </button>
         </div>
       </div>
@@ -566,99 +559,72 @@ export default function Inventory({ data, onUpdate, recentlySold, setRecentlySol
             key={`${item.id}-${item.variant.id}`}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-black border border-white/5 rounded-2xl p-4 space-y-4 shadow-xl"
+            className="bg-black border border-white/5 rounded-3xl p-5 space-y-5 shadow-2xl relative overflow-hidden group"
           >
-            <div className="flex gap-4">
-              <div className="relative w-20 h-20 bg-white/5 rounded-xl overflow-visible border border-white/10 flex items-center justify-center shrink-0 z-0 active:z-50">
+            <div className="flex gap-5">
+              <div className="relative w-24 h-24 bg-white/5 rounded-2xl overflow-hidden border border-white/10 flex items-center justify-center shrink-0">
                 {item.imageUrl ? (
                   <img 
                     src={item.imageUrl} 
                     alt={item.name}
                     onClick={() => setSelectedImage(item.imageUrl || null)}
-                    className="w-full h-full object-cover rounded-xl transition-all duration-300 active:scale-[2] active:shadow-2xl active:shadow-black/50 cursor-zoom-in"
+                    className="w-full h-full object-cover transition-transform duration-500 active:scale-110"
                     referrerPolicy="no-referrer"
                   />
                 ) : (
-                  <Package className="w-8 h-8 text-white/20" />
+                  <Package className="w-10 h-10 text-white/10" />
                 )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-bold text-[16px] text-white truncate">{item.name}</h3>
-                    <p className="text-[15px] text-white/40 uppercase tracking-wider">{item.design}</p>
-                  </div>
-                  <span className="px-2 py-0.5 bg-white/5 rounded-full text-[15px] font-bold uppercase tracking-wider text-white/60">
-                    {item.category}
-                  </span>
-                </div>
-                <div className="mt-2 flex items-center gap-2">
-                  <span className="px-2 py-0.5 bg-orange-500/10 text-orange-500 rounded-lg text-[15px] font-black border border-orange-500/20">
-                    {item.variant.size}
-                  </span>
-                  <span className="text-[15px] text-white/40 uppercase">{item.variant.color}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 py-3 border-y border-white/5">
-              <div>
-                <p className="text-[15px] font-bold text-white/20 uppercase tracking-widest mb-1">Precio</p>
-                <p className="font-bold text-[16px] text-white">{formatCurrency(item.price)}</p>
-                <p className="text-[15px] text-white/20">Costo: {formatCurrency(item.cost)}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-[15px] font-bold text-white/20 uppercase tracking-widest mb-1">Stock</p>
-                <div className="flex items-center justify-end gap-1">
+                <div className="absolute top-1 right-1">
                   <span className={cn(
-                    "text-[16px] font-bold",
-                    item.variant.stock <= 5 ? "text-orange-500" : "text-white/60"
+                    "px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest",
+                    item.variant.stock <= 5 ? "bg-red-500 text-black" : "bg-orange-500 text-black"
                   )}>
                     {item.variant.stock}
                   </span>
-                  <span className="text-[15px] text-white/20 uppercase">unid.</span>
+                </div>
+              </div>
+              <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
+                <div>
+                  <div className="flex justify-between items-start mb-1">
+                    <h3 className="font-black text-lg text-white truncate leading-tight uppercase italic tracking-tighter">{item.name}</h3>
+                    <div className="flex gap-1">
+                      <button 
+                        onClick={() => {
+                          setEditingProduct(item as Product);
+                          setIsModalOpen(true);
+                        }}
+                        className="p-1.5 hover:bg-white/5 rounded-lg text-white/20"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                  <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-2">{item.design}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="px-2 py-0.5 bg-white/5 rounded-lg text-[9px] font-black uppercase tracking-widest text-white/40 border border-white/5">
+                      {item.category}
+                    </span>
+                    <span className="px-2 py-0.5 bg-orange-500/10 text-orange-500 rounded-lg text-[9px] font-black uppercase tracking-widest border border-orange-500/20">
+                      Talla {item.variant.size}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-xl font-black text-orange-500 tracking-tighter">{formatCurrency(item.price)}</span>
+                  <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">PVP</span>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-between gap-3 pt-1">
-              <div className="flex items-center gap-2">
-                {(item.variant.stock > 0 && !recentlySold.has(item.variant.id)) ? (
-                  <span className="px-2 py-1 bg-blue-500/10 text-blue-400 rounded-lg text-[15px] font-bold uppercase tracking-widest border border-blue-500/20">
-                    No Vendido
-                  </span>
-                ) : (
-                  <span className="px-2 py-1 bg-green-500/10 text-green-500 rounded-lg text-[15px] font-bold uppercase tracking-widest border border-green-500/20">
-                    Vendido
-                  </span>
-                )}
-                <div className="flex gap-1">
-                  <button 
-                    onClick={() => {
-                      setEditingProduct(item as Product);
-                      setIsModalOpen(true);
-                    }}
-                    className="p-2 hover:bg-white/5 rounded-lg text-white/40 hover:text-white transition-colors"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button 
-                    onClick={() => setDeleteConfirmId(item.id)}
-                    className="p-2 hover:bg-red-500/10 rounded-lg text-white/40 hover:text-red-500 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-
+            <div className="flex items-center gap-3 pt-2">
               <motion.button 
                 whileTap={{ scale: 0.95 }}
                 onClick={() => handleQuickSale(item as Product, item.variant)}
                 disabled={item.variant.stock <= 0 || processingSale === item.variant.id || recentlySold.has(item.variant.id)}
                 className={cn(
-                  "flex-1 flex items-center gap-1.5 px-4 py-2.5 rounded-xl transition-all text-[15px] font-black uppercase tracking-wider justify-center",
+                  "flex-1 flex items-center gap-2 px-6 py-4 rounded-2xl transition-all text-xs font-black uppercase tracking-widest justify-center shadow-lg",
                   (item.variant.stock > 0 && !recentlySold.has(item.variant.id))
-                    ? "bg-green-500 text-black shadow-[0_0_15px_rgba(34,197,94,0.3)]"
+                    ? "bg-orange-500 text-black shadow-orange-500/20"
                     : "bg-white/5 text-white/10 cursor-not-allowed border border-white/5",
                   processingSale === item.variant.id && "animate-pulse opacity-70"
                 )}
@@ -666,10 +632,16 @@ export default function Inventory({ data, onUpdate, recentlySold, setRecentlySol
                 {processingSale === item.variant.id ? (
                   <div className="w-3.5 h-3.5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
                 ) : (
-                  <Zap className="w-3.5 h-3.5" />
+                  <Zap className="w-4 h-4" />
                 )}
-                {processingSale === item.variant.id ? '...' : (recentlySold.has(item.variant.id) || item.variant.stock <= 0 ? 'Vendido' : 'Vender')}
+                {processingSale === item.variant.id ? 'Procesando' : (recentlySold.has(item.variant.id) || item.variant.stock <= 0 ? 'Vendido' : 'Venta Rápida')}
               </motion.button>
+              <button 
+                onClick={() => setDeleteConfirmId(item.id)}
+                className="p-4 bg-white/5 hover:bg-red-500/10 rounded-2xl text-white/20 hover:text-red-500 transition-all border border-white/5"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
             </div>
           </motion.div>
         ))}

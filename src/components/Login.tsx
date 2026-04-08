@@ -45,16 +45,21 @@ export default function Login({ onDemoLogin }: { onDemoLogin: () => void }) {
       const user = result.user;
       
       // Create profile if it doesn't exist
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      if (!userDoc.exists()) {
-        await setDoc(doc(db, 'users', user.uid), {
-          uid: user.uid,
-          email: user.email,
-          displayName: user.displayName,
-          photoURL: user.photoURL,
-          companyName: '',
-          createdAt: new Date().toISOString()
-        });
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (!userDoc.exists()) {
+          await setDoc(doc(db, 'users', user.uid), {
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            companyName: '',
+            role: 'user',
+            createdAt: new Date().toISOString()
+          });
+        }
+      } catch (profileError) {
+        console.error('Error checking/creating Google user profile:', profileError);
       }
       
       toast.success('¡Bienvenido a ModaFlow!');
@@ -119,21 +124,41 @@ export default function Login({ onDemoLogin }: { onDemoLogin: () => void }) {
         return;
       }
       email = `${sanitizedUsername}@modaflow.com`;
+    } else {
+      // For emails, remove all spaces to ensure a valid email format
+      email = trimmedUsername.toLowerCase().replace(/\s+/g, '');
     }
     
     try {
       if (isRegistering) {
+        // Validation for registration
+        if (password.length < 6) {
+          toast.error('La contraseña es muy corta', {
+            description: 'Usa al menos 6 caracteres.',
+            duration: 4000
+          });
+          setIsLoading(false);
+          return;
+        }
+
         const result = await createUserWithEmailAndPassword(auth, email, password);
         const user = result.user;
         
         // Create user profile
-        await setDoc(doc(db, 'users', user.uid), {
-          uid: user.uid,
-          email: user.email,
-          displayName: trimmedUsername.split('@')[0], // Use username part as display name
-          companyName: '',
-          createdAt: new Date().toISOString()
-        });
+        try {
+          await setDoc(doc(db, 'users', user.uid), {
+            uid: user.uid,
+            email: user.email,
+            displayName: trimmedUsername.split('@')[0],
+            companyName: '',
+            role: 'user',
+            createdAt: new Date().toISOString()
+          });
+        } catch (profileError: any) {
+          console.error('Error creating user profile:', profileError);
+          // Even if profile creation fails, the user is created in Auth.
+          // We don't want to block them, but we should notify.
+        }
         
         toast.success('¡Bienvenido! Cuenta creada con éxito.');
       } else {
@@ -141,36 +166,41 @@ export default function Login({ onDemoLogin }: { onDemoLogin: () => void }) {
         toast.success('¡Sesión iniciada!');
       }
     } catch (error: any) {
-      console.error('Auth error:', error);
-      
+      console.error('Auth error detail:', error);
       const errorCode = error.code;
+      const errorMessage = error.message;
       
       if (errorCode === 'auth/wrong-password' || errorCode === 'auth/user-not-found' || errorCode === 'auth/invalid-credential') {
-        toast.error('Usuario o contraseña incorrectos', {
-          description: 'Verifica tus datos e intenta de nuevo.',
+        const msg = isRegistering ? 'Error al crear la cuenta' : 'Usuario o contraseña incorrectos';
+        const desc = isRegistering ? 'Inténtalo de nuevo con otros datos.' : 'Verifica tus datos e intenta de nuevo.';
+        toast.error(msg, {
+          description: desc,
           duration: 4000
         });
       } else if (errorCode === 'auth/invalid-email') {
-        toast.error('El usuario no es válido', {
+        toast.error('El usuario o correo no es válido', {
           description: 'Asegúrate de no usar espacios o caracteres especiales.',
           duration: 4000
         });
       } else if (errorCode === 'auth/email-already-in-use') {
-        toast.error('Este usuario ya está en uso', {
-          description: 'Prueba con otro nombre o inicia sesión.'
+        toast.error('Este usuario o correo ya está en uso', {
+          description: 'Prueba con otro nombre o inicia sesión.',
+          duration: 5000
         });
       } else if (errorCode === 'auth/weak-password') {
         toast.error('La contraseña es muy corta', {
-          description: 'Usa al menos 6 caracteres.'
+          description: 'Usa al menos 6 caracteres.',
+          duration: 4000
         });
-      } else if (errorCode === 'auth/operation-not-allowed') {
-        toast.error('Método no habilitado', {
-          description: 'Por favor, contacta al soporte técnico.',
-          duration: 8000
+      } else if (errorCode === 'auth/too-many-requests') {
+        toast.error('Demasiados intentos', {
+          description: 'Por favor, espera un momento antes de intentar de nuevo.',
+          duration: 6000
         });
       } else {
-        toast.error('Error al conectar', {
-          description: 'Revisa tu conexión e inténtalo de nuevo.'
+        toast.error('Error en el sistema', {
+          description: errorMessage || 'Ocurrió un error inesperado. Inténtalo de nuevo.',
+          duration: 5000
         });
       }
     } finally {

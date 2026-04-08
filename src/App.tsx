@@ -9,7 +9,9 @@ import {
   Menu, 
   X,
   LogOut,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  Target,
+  Smartphone
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Toaster, toast } from 'sonner';
@@ -42,6 +44,7 @@ export default function App() {
   const [hasShownWelcome, setHasShownWelcome] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [recentlySold, setRecentlySold] = useState<Set<string>>(new Set());
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [data, setData] = useState<AppState>({
     products: [],
     sales: [],
@@ -69,7 +72,17 @@ export default function App() {
       }
     };
     window.addEventListener('change-view', handleViewChange);
-    return () => window.removeEventListener('change-view', handleViewChange);
+    
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('change-view', handleViewChange);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
   }, []);
 
   useEffect(() => {
@@ -200,6 +213,17 @@ export default function App() {
     });
   };
 
+  const navRef = React.useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (navRef.current) {
+      const activeItem = navRef.current.querySelector(`[data-active="true"]`);
+      if (activeItem) {
+        activeItem.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+    }
+  }, [activeView]);
+
   if (!isAuthReady) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -223,6 +247,7 @@ export default function App() {
     { id: 'sales', label: 'Ventas', icon: ShoppingCart },
     { id: 'incomes', label: 'Ingresos', icon: TrendingUp },
     { id: 'expenses', label: 'Gastos', icon: TrendingDown },
+    { id: 'goals', label: 'Metas', icon: Target },
     { id: 'finances', label: 'Finanzas', icon: BarChart3 },
   ];
 
@@ -234,12 +259,24 @@ export default function App() {
         {/* Mobile Header */}
         <header className="lg:hidden flex items-center justify-between p-3 border-b border-white/10 bg-black/80 backdrop-blur-md sticky top-0 z-50">
           <Logo iconClassName="w-7 h-7" className="gap-2" />
-          <button 
-            onClick={() => setIsSidebarOpen(true)}
-            className="p-1.5 hover:bg-white/5 rounded-full transition-colors"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setActiveView('settings')}
+              className={cn(
+                "p-2 hover:bg-white/5 rounded-full transition-colors flex items-center gap-2",
+                activeView === 'settings' ? "text-orange-500" : "text-white/40"
+              )}
+            >
+              <SettingsIcon className="w-5 h-5" />
+            </button>
+            <button 
+              onClick={handleLogout}
+              className="p-2 hover:bg-red-500/10 text-red-400/60 rounded-full transition-colors"
+              title="Salir"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
+          </div>
         </header>
 
         <div className="flex">
@@ -291,39 +328,24 @@ export default function App() {
                     {item.label}
                   </button>
                 ))}
-              </nav>
-
-              <div className="pt-4 md:pt-6 border-t border-white/5 space-y-1 md:space-y-2">
-                <button 
-                  onClick={() => {
-                    setActiveView('goals');
-                    setIsSidebarOpen(false);
-                  }}
-                  className={cn(
-                    "w-full flex items-center gap-2.5 md:gap-3 px-3 md:px-4 py-2 md:py-3 rounded-lg md:rounded-xl transition-all text-[16px] md:text-base",
-                    activeView === 'goals' 
-                      ? "bg-orange-500 text-black font-semibold shadow-[0_0_15px_rgba(249,115,22,0.2)]" 
-                      : "text-white/40 hover:text-white hover:bg-white/5"
-                  )}
-                >
-                  <BarChart3 className={cn("w-4 h-4 md:w-5 md:h-5", activeView === 'goals' ? "text-black" : "text-white/40")} />
-                  Metas
-                </button>
-                <button 
+                <button
                   onClick={() => {
                     setActiveView('settings');
                     setIsSidebarOpen(false);
                   }}
                   className={cn(
-                    "w-full flex items-center gap-2.5 md:gap-3 px-3 md:px-4 py-2 md:py-3 rounded-lg md:rounded-xl transition-all text-[16px] md:text-base",
+                    "w-full flex items-center gap-2.5 md:gap-3 px-3 md:px-4 py-2.5 md:py-3.5 rounded-lg md:rounded-xl transition-all duration-200 group text-[16px] md:text-base",
                     activeView === 'settings' 
                       ? "bg-orange-500 text-black font-semibold shadow-[0_0_15px_rgba(249,115,22,0.2)]" 
-                      : "text-white/40 hover:text-white hover:bg-white/5"
+                      : "text-white/60 hover:text-white hover:bg-white/5"
                   )}
                 >
-                  <SettingsIcon className={cn("w-4 h-4 md:w-5 md:h-5", activeView === 'settings' ? "text-black" : "text-white/40")} />
-                  Configuración
+                  <SettingsIcon className={cn("w-4 h-4 md:w-5 md:h-5", activeView === 'settings' ? "text-black" : "text-white/40 group-hover:text-white/80")} />
+                  Ajustes
                 </button>
+              </nav>
+
+              <div className="pt-4 md:pt-6 border-t border-white/5 space-y-1 md:space-y-2">
                 <button 
                   onClick={handleLogout}
                   className="w-full flex items-center gap-2.5 md:gap-3 px-3 md:px-4 py-2 md:py-3 rounded-lg md:rounded-xl text-red-400/60 hover:text-red-400 hover:bg-red-400/5 transition-all text-[16px] md:text-base"
@@ -359,19 +381,45 @@ export default function App() {
                 {activeView === 'incomes' && <Incomes data={data} onUpdate={handleUpdate} />}
                 {activeView === 'expenses' && <Expenses data={data} onUpdate={handleUpdate} />}
                 {activeView === 'finances' && <Finances data={data} />}
-                {activeView === 'settings' && <Settings data={data} userProfile={userProfile} onUpdate={handleUpdate} />}
+                {activeView === 'settings' && <Settings data={data} userProfile={userProfile} onUpdate={handleUpdate} deferredPrompt={deferredPrompt} />}
               </motion.div>
             </AnimatePresence>
           </main>
         </div>
 
-        {/* Overlay for mobile sidebar */}
-        {isSidebarOpen && (
-          <div 
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[55] lg:hidden"
-            onClick={() => setIsSidebarOpen(false)}
-          />
-        )}
+        {/* Bottom Navigation for Mobile */}
+        <nav 
+          ref={navRef}
+          className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-lg border-t border-white/10 px-1 py-1 flex items-center gap-0 overflow-x-auto no-scrollbar scroll-smooth"
+        >
+          {navItems.map((item) => (
+            <button
+              key={item.id}
+              data-active={activeView === item.id}
+              onClick={() => {
+                if (item.id === 'logout') {
+                  handleLogout();
+                } else {
+                  setActiveView(item.id as View);
+                }
+              }}
+              className={cn(
+                "flex flex-col items-center gap-0.5 p-1 min-w-[60px] rounded-xl transition-all",
+                activeView === item.id ? "text-orange-500" : "text-white/40"
+              )}
+            >
+              <item.icon className="w-5 h-5" />
+              <span className="text-[10px] font-medium">{item.label}</span>
+            </button>
+          ))}
+        </nav>
+
+        {/* Add padding to main content to account for bottom nav on mobile */}
+        <style dangerouslySetInnerHTML={{ __html: `
+          @media (max-width: 1023px) {
+            main { padding-bottom: 80px !important; }
+          }
+        `}} />
 
         {/* AI Advisor */}
         <AIAdvisor data={data} />
